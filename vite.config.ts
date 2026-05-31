@@ -13,5 +13,9 @@ export default defineConfig({
       '@ui': fileURLToPath(new URL('./src/ui', import.meta.url)),
       '@utils': fileURLToPath(new URL('./src/utils', import.meta.url))
     }
+  },
+  build: {
+    sourcemap: false,
+    minify: 'esbuild'
   }
 });
