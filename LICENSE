@@ -1,0 +1,27 @@
+ALGOVISTA PROPRIETARY SOURCE CODE LICENSE
+
+Copyright (c) 2026 Chirag P Patil. All rights reserved.
+
+1. DEFINITIONS AND SCOPE
+"Software" refers to the AlgoVista codebase, including all source code files, React/TypeScript/Vite scripts, stylesheets, configuration files, visual assets, SVG vector icons, custom rendering structures (e.g., Matrix2D, GraphNetwork, StackQueue primitives), and dynamic algorithm registry database modules.
+"Owner" refers to the copyright holder, Chirag P Patil.
+"User" refers to any individual, entity, or automated system accessing or viewing the Software.
+
+2. COPYRIGHT AND OWNERSHIP
+The Software, including all its logical implementations, design tokens, visual animations, and algorithm representation formats, is the exclusive intellectual property of the Owner. Nothing in this License transfers, assigns, or licenses any copyright, trademark, patent, or other proprietary rights in the Software to any User, except for the narrow permissions explicitly detailed in Section 3.
+
+3. LICENSE GRANTS AND RESTRICTIONS
+a. View and Fork Permissions: Under the GitHub Terms of Service, Users are permitted to view the Software's source code on GitHub and fork the repository within the GitHub platform.
+b. No Downloading or Cloning: Except as technically required for browser viewing within the GitHub platform under Section 3(a), Users are strictly prohibited from downloading, cloning, copying, duplicating, or archiving the Software (or any portion thereof) to any local storage, offline database, or third-party Git server.
+c. No Modification: Users may not modify, adapt, translate, reverse-engineer, decompile, disassemble, or create derivative works based on the Software.
+d. No Redistribution: Users may not distribute, sublicense, rent, lease, lend, publish, or otherwise make the Software (or modified versions of it) available to any third party.
+e. No Hosting or Deployment: Users are strictly prohibited from deploying, hosting, running, or serving the Software (or any compiled production build thereof) on any public or private web hosting platforms, including but not limited to Netlify, Vercel, GitHub Pages, Render, AWS, Google Cloud, Microsoft Azure, or private servers. All deployments are restricted to the official site managed by the Owner.
+
+4. COLLABORATION AND CONTRIBUTIONS
+If a User submits a pull request, issue, or contribution to the Software, the User grants the Owner a perpetual, irrevocable, worldwide, royalty-free, fully sub-licensable license to use, modify, distribute, and incorporate that contribution into the Software without credit, compensation, or restriction.
+
+5. TERMINATION
+Any breach of this License by a User automatically and immediately terminates all permissions granted hereunder. Upon termination, the User must destroy all copies of the Software in their possession or control.
+
+6. DISCLAIMER OF WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
