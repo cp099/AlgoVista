@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* LIGHT MODE (High Fidelity Professional Slate & Indigo) */
+    --color-bg: #f1f5f9; /* Rich soft slate background for solid card contrast */
+    --color-surface: #ffffff; /* Solid white card bodies */
+    --color-surface-hover: #f8fafc; /* Card hover background */
+    --color-border: #e2e8f0; /* Crisp Slate-200 border lines */
+    --color-text-main: #0f172a; /* Slate-900 headers */
+    --color-text-muted: #334155; /* Slate-700 body copy */
+    --color-primary: #4f46e5; /* Indigo-600 action brand */
+    --color-primary-light: rgba(79, 70, 229, 0.08); /* Indigo soft tint */
+    --color-accent: #d97706; /* Amber accent */
+    --color-success: #059669; /* Emerald success */
+    --color-glow: rgba(79, 70, 229, 0.12); /* Subtle glow shadow */
+  }
+
+  .dark {
+    /* DARK MODE (Synthetic Intelligence - High Fidelity Premium Dark) */
+    --color-bg: #070b19;
+    --color-surface: #0f172a;
+    --color-surface-hover: #1e293b;
+    --color-border: #1e293b;
+    --color-text-main: #f8fafc;
+    --color-text-muted: #94a3b8;
+    --color-primary: #6366f1;
+    --color-primary-light: rgba(99, 102, 241, 0.15);
+    --color-accent: #fbbf24;
+    --color-success: #10b981;
+    --color-glow: rgba(99, 102, 241, 0.35);
+  }
+
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-main);
+    font-family: 'Inter', system-ui, sans-serif;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  }
+
+  /* Custom Premium Scrollbar Theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 9999px;
+    transition: background 0.3s;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+  }
+}
