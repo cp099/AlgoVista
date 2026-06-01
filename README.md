@@ -24,7 +24,7 @@
 
 ---
 
-## 🚀 Premium EdTech Visual Suite Features
+## Premium EdTech Visual Suite Features
 
 AlgoVista has been upgraded with a top-of-the-line interactive suite designed to transition learners from passive observers to active problem solvers:
 
