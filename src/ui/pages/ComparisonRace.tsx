@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Shuffle, Plus, Trash2, Trophy, Clock, Zap } from 'lucide-react';
+import { Play, Pause, RotateCcw, Shuffle, Plus, Trash2, Clock, Zap } from 'lucide-react';
 import { getAllAlgorithms, getAlgorithm } from '@registry/index';
 import { Stage } from '@renderer/Stage';
 import { cn } from '@utils/cn';
@@ -19,6 +19,8 @@ interface RunnerState {
   currentStep: number;
 }
 
+type DistributionType = 'random' | 'reversed' | 'sorted' | 'unique';
+
 export const ComparisonRace: React.FC = () => {
   // Get all sorting algorithm manifests
   const sortingManifests = getAllAlgorithms().filter(
@@ -32,31 +34,60 @@ export const ComparisonRace: React.FC = () => {
     'merge-sort'
   ]);
   const [arraySize, setArraySize] = useState<number>(15);
+  const [presetType, setPresetType] = useState<DistributionType>('random');
   const [sharedArray, setSharedArray] = useState<number[]>([]);
   const [runners, setRunners] = useState<RunnerState[]>([]);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [speed, setSpeed] = useState<number>(300); // delay in ms
+  const [finishOrder, setFinishOrder] = useState<string[]>([]); // Track finish sequence (podium)
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Generate new array
+  // 1. Generate new array based on distribution type
   const generateNewArray = () => {
-    const arr = Array.from({ length: arraySize }, () =>
-      Math.floor(Math.random() * 85) + 10
-    );
+    let arr: number[] = [];
+    if (presetType === 'random') {
+      arr = Array.from({ length: arraySize }, () =>
+        Math.floor(Math.random() * 85) + 10
+      );
+    } else if (presetType === 'reversed') {
+      arr = Array.from({ length: arraySize }, (_, i) =>
+        Math.floor(10 + ((arraySize - 1 - i) / arraySize) * 85)
+      );
+    } else if (presetType === 'sorted') {
+      // 90% sorted, with a few swapped elements
+      arr = Array.from({ length: arraySize }, (_, i) =>
+        Math.floor(10 + (i / arraySize) * 85)
+      );
+      if (arr.length > 4) {
+        // Swap elements near the start and end to create local disorder
+        const temp1 = arr[1]; arr[1] = arr[2]; arr[2] = temp1;
+        const lastIdx = arr.length - 1;
+        const temp2 = arr[lastIdx]; arr[lastIdx] = arr[lastIdx - 1]; arr[lastIdx - 1] = temp2;
+      }
+    } else if (presetType === 'unique') {
+      const pool = [20, 48, 75];
+      arr = Array.from({ length: arraySize }, () =>
+        pool[Math.floor(Math.random() * pool.length)]
+      );
+    }
+
     setSharedArray(arr);
     setIsPlaying(false);
+    setFinishOrder([]); // reset podium
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
-  // Generate array on mount or size change
+  // Generate array on mount or size/preset change
   useEffect(() => {
     generateNewArray();
-  }, [arraySize]);
+  }, [arraySize, presetType]);
 
   // 2. Initialize runners
   const initRunners = () => {
     if (sharedArray.length === 0) return;
+
+    setFinishOrder([]); // Clear podium rankings
 
     const newRunners: RunnerState[] = selectedAlgos.map(id => {
       const bundle = getAlgorithm(id);
@@ -76,10 +107,7 @@ export const ComparisonRace: React.FC = () => {
         };
       }
 
-      // Instantiate generator with shared array input
       const generator = bundle.run({ arr: [...sharedArray] });
-      
-      // Consume first yield to get initial state
       const first = generator.next();
       let initialState: AlgoState | null = null;
       let initialEvents: AlgoEvent[] = [];
@@ -99,7 +127,7 @@ export const ComparisonRace: React.FC = () => {
         swaps: 0,
         writes: 0,
         finished: false,
-        totalSteps: 1, // Will accumulate or display steps
+        totalSteps: 1,
         currentStep: 1
       };
     });
@@ -117,11 +145,14 @@ export const ComparisonRace: React.FC = () => {
   const stepAll = () => {
     setRunners(prevRunners => {
       let anyActive = false;
+      const justFinished: string[] = [];
+
       const updated = prevRunners.map(runner => {
         if (runner.finished || !runner.generator) return runner;
 
         const res = runner.generator.next();
         if (res.done) {
+          justFinished.push(runner.algoId);
           return { ...runner, finished: true };
         } else {
           anyActive = true;
@@ -137,6 +168,17 @@ export const ComparisonRace: React.FC = () => {
           };
         }
       });
+
+      // Append newly finished runner IDs to podium list in order of finish
+      if (justFinished.length > 0) {
+        setFinishOrder(prev => {
+          const next = [...prev];
+          justFinished.forEach(id => {
+            if (!next.includes(id)) next.push(id);
+          });
+          return next;
+        });
+      }
 
       if (!anyActive) {
         setIsPlaying(false);
@@ -160,7 +202,6 @@ export const ComparisonRace: React.FC = () => {
   }, [isPlaying, speed]);
 
   const handlePlayToggle = () => {
-    // If all are finished, reset first
     if (runners.every(r => r.finished)) {
       initRunners();
       setTimeout(() => setIsPlaying(true), 50);
@@ -182,7 +223,7 @@ export const ComparisonRace: React.FC = () => {
   };
 
   const addAlgoTrack = () => {
-    if (selectedAlgos.length >= 3) return; // Cap at 3 for split-screen layout
+    if (selectedAlgos.length >= 3) return; // Cap at 3 for visual spacing
     const remaining = sortingManifests.find(m => !selectedAlgos.includes(m.id));
     if (remaining) {
       setSelectedAlgos(prev => [...prev, remaining.id]);
@@ -192,6 +233,38 @@ export const ComparisonRace: React.FC = () => {
   const removeAlgoTrack = (index: number) => {
     if (selectedAlgos.length <= 1) return;
     setSelectedAlgos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Helper to render podium badges
+  const getPodiumBadge = (algoId: string) => {
+    const rank = finishOrder.indexOf(algoId);
+    if (rank === -1) return null;
+
+    if (rank === 0) {
+      return (
+        <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/35 text-amber-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse shadow-sm shadow-amber-500/5">
+          🥇 1st place (Gold)
+        </div>
+      );
+    }
+
+    if (rank === 1) {
+      return (
+        <div className="flex items-center gap-1 bg-slate-400/20 border border-slate-400/35 text-slate-300 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm shadow-slate-400/5">
+          🥈 2nd place (Silver)
+        </div>
+      );
+    }
+
+    if (rank === 2) {
+      return (
+        <div className="flex items-center gap-1 bg-amber-700/25 border border-amber-700/35 text-amber-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm shadow-amber-700/5">
+          🥉 3rd place (Bronze)
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -204,23 +277,38 @@ export const ComparisonRace: React.FC = () => {
             Sorting Algorithm Duel
           </h1>
           <p className="text-algo-muted mt-2 text-sm font-medium">
-            Run up to three sorting algorithms concurrently on the same dataset to visually race their time complexity bounds.
+            Run sorting algorithms concurrently on the same dataset to visually race their time complexity bounds in real-time.
           </p>
         </div>
 
         {/* Global Controls */}
         <div className="flex flex-wrap items-center gap-3 bg-algo-surface/60 backdrop-blur-md p-2 rounded-2xl border border-algo-border/60 shadow-lg">
           
+          {/* Preset Selector */}
+          <div className="flex items-center gap-2 px-3 border-r border-algo-border/40">
+            <span className="text-[10px] font-bold text-algo-muted uppercase tracking-wider">Array:</span>
+            <select
+              value={presetType}
+              onChange={(e) => setPresetType(e.target.value as DistributionType)}
+              className="bg-transparent text-xs font-bold text-algo-text outline-none cursor-pointer"
+            >
+              <option value="random">Random Mix</option>
+              <option value="reversed">Reversed (Worst)</option>
+              <option value="sorted">Nearly Sorted</option>
+              <option value="unique">Few Uniques</option>
+            </select>
+          </div>
+
           {/* Size Slider */}
           <div className="flex items-center gap-2 px-3 border-r border-algo-border/40">
-            <span className="text-xs font-bold text-algo-muted">N: {arraySize}</span>
+            <span className="text-[10px] font-bold text-algo-muted uppercase tracking-wider">Size: {arraySize}</span>
             <input 
               type="range" 
               min={8} 
               max={25} 
               value={arraySize}
               onChange={(e) => setArraySize(parseInt(e.target.value))}
-              className="w-20 accent-algo-primary h-1 bg-algo-border rounded-lg cursor-pointer"
+              className="w-16 accent-algo-primary h-1 bg-algo-border rounded-lg cursor-pointer"
             />
           </div>
 
@@ -243,7 +331,7 @@ export const ComparisonRace: React.FC = () => {
           <button 
             onClick={generateNewArray}
             className="p-2 hover:bg-algo-surface-hover rounded-xl text-algo-muted hover:text-algo-text transition active:scale-95"
-            title="Shuffle Dataset"
+            title="Generate New Shared Array"
           >
             <Shuffle size={16} />
           </button>
@@ -251,7 +339,7 @@ export const ComparisonRace: React.FC = () => {
           <button 
             onClick={handleReset}
             className="p-2 hover:bg-algo-surface-hover rounded-xl text-algo-muted hover:text-algo-text transition active:scale-95"
-            title="Reset Race"
+            title="Reset Race Tracks"
           >
             <RotateCcw size={16} />
           </button>
@@ -313,16 +401,14 @@ export const ComparisonRace: React.FC = () => {
         selectedAlgos.length === 3 && "grid-cols-1 lg:grid-cols-3"
       )}>
         {runners.map((runner, idx) => {
-          const isWinner = runner.finished && runners.every(r => r.finished || r.algoId !== runner.algoId) && 
-                           runner.comparisons <= Math.min(...runners.map(r => r.comparisons));
+          const hasFinished = finishOrder.includes(runner.algoId);
 
           return (
             <div 
               key={idx} 
               className={cn(
                 "glass-panel rounded-2xl border flex flex-col h-[400px] overflow-hidden transition-all duration-500 relative",
-                runner.finished ? "border-algo-success/30 shadow-algo-success/5" : "border-algo-border",
-                isWinner && "ring-2 ring-algo-accent/60 shadow-lg shadow-algo-accent/5"
+                runner.finished ? "border-algo-success/30 shadow-algo-success/5" : "border-algo-border"
               )}
             >
               {/* Runner Title Header */}
@@ -332,14 +418,15 @@ export const ComparisonRace: React.FC = () => {
                     {runner.name}
                   </h3>
                   <span className="text-[10px] font-mono text-algo-muted uppercase tracking-wider">
-                    {runner.finished ? '🏁 Finished' : '🏃 Running'}
+                    {runner.finished ? '🏁 Finished' : '🏃 Sorting...'}
                   </span>
                 </div>
-                {isWinner && (
-                  <div className="flex items-center gap-1 bg-algo-accent/20 border border-algo-accent/30 text-algo-accent px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase animate-bounce">
-                    <Trophy size={10} />
-                    Most Optimal
-                  </div>
+                {hasFinished ? (
+                  getPodiumBadge(runner.algoId)
+                ) : (
+                  runner.finished && (
+                    <div className="text-[10px] font-mono text-algo-muted">Finished</div>
+                  )
                 )}
               </div>
 
