@@ -53,28 +53,6 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     yield { snapshot: makeState({ step }, `Jump size calculated: ${step}`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. Jump Phase
-    while (arr[Math.min(step, n) - 1] < target) {
-        comparisons++;
-        let idx = Math.min(step, n) - 1;
-        
-        yield { 
-            snapshot: makeState({ prev, step, idx, val: arr[idx] }, `Checking block end ${arr[idx]} < ${target}`), 
-            events: [{ type: 'compare', targetIds: ['main'], indices: [idx] }],
-            metrics: { comparisons, swaps: 0, writes: 0 } 
-        };
-
-        prev = step;
-        // Move next block
-        yield { 
-            snapshot: makeState({ prev }, `Jumping forward to index ${prev}`), 
-            events: [{ type: 'visit', targetIds: ['main'], indices: [prev] }],
-            metrics: { comparisons, swaps: 0, writes: 0 } 
-        };
-
-        // (We actually update step variable in logic below loop start, but here for visual flow)
-    }
-    // Correct loop logic for generator flow
-    // Re-implementing standard loop structure to match visual flow
     
     let curr = 0;
     while (arr[Math.min(curr + step, n) - 1] < target) {
