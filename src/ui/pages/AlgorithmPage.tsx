@@ -130,7 +130,7 @@ export const AlgorithmPage = () => {
 
   // -- 4. ACTIVE SOCRATIC QUIZ CHECKER --
   useEffect(() => {
-    if (!id || !engineRef.current) return;
+    if (!id || !engineRef.current || !settings.quizzesEnabled) return;
     
     const quizzes = getQuizForAlgorithm(id);
     const currentStepIndex = engineRef.current.currentStepIndex;
@@ -145,7 +145,7 @@ export const AlgorithmPage = () => {
         setTriggeredQuizzes(prev => ({ ...prev, [quiz.id]: true }));
       }
     }
-  }, [state, isPlaying, id, triggeredQuizzes]);
+  }, [state, isPlaying, id, triggeredQuizzes, settings.quizzesEnabled]);
 
   // -- 5. SPEED CONTROL CHANGE --
   const handleSpeedChange = (newSpeed: number) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Moon, Sun, Sliders, Volume2, Activity, Eye, RefreshCw } from 'lucide-react';
+import { X, Moon, Sun, Sliders, Volume2, Activity, Eye, RefreshCw, HelpCircle } from 'lucide-react';
 import { useTheme } from '@core/ThemeContext';
 import { useSettings, NodeStyle } from '@core/SettingsContext';
 
@@ -184,6 +184,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 >
                   <span className={`block w-4 h-4 rounded-full bg-white transition-all duration-300 transform ${
                     settings.debugMode ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+
+              {/* Socratic Quizzes Toggle */}
+              <div className="bg-algo-surface border border-algo-border p-4 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-algo-primary/10 rounded-lg text-algo-primary">
+                    <HelpCircle size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-algo-text">Active Recall Quizzes</h4>
+                    <p className="text-[10px] text-algo-muted">Ask questions during playback</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => updateSetting('quizzesEnabled', !settings.quizzesEnabled)}
+                  className={`w-11 h-6 rounded-full p-1 transition-all duration-300 relative ${
+                    settings.quizzesEnabled ? 'bg-algo-primary' : 'bg-algo-surface border border-algo-border'
+                  }`}
+                >
+                  <span className={`block w-4 h-4 rounded-full bg-white transition-all duration-300 transform ${
+                    settings.quizzesEnabled ? 'translate-x-5' : 'translate-x-0'
                   }`} />
                 </button>
               </div>

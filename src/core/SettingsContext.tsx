@@ -8,6 +8,7 @@ interface Settings {
   nodeStyle: NodeStyle;
   debugMode: boolean;
   soundEnabled: boolean;
+  quizzesEnabled: boolean;
 }
 
 interface SettingsContextType {
@@ -22,6 +23,7 @@ const DEFAULT_SETTINGS: Settings = {
   nodeStyle: 'neon',
   debugMode: false,
   soundEnabled: false,
+  quizzesEnabled: true,
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
