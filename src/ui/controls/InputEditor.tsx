@@ -59,10 +59,15 @@ export const InputEditor: React.FC<InputEditorProps> = ({ inputs, currentValues,
   const handleRandomize = (def: InputDefinition) => {
     // Case 1: Random Number Array
     if (def.type === 'array') {
-      const min = def.constraints?.min || 1;
-      const max = def.constraints?.max || 99;
-      const len = def.constraints?.maxLength || 10;
-      const randomArr = Array.from({ length: len }, () => Math.floor(Math.random() * (max - min) + min));
+      const min = def.constraints?.min !== undefined ? def.constraints.min : 1;
+      const max = def.constraints?.max !== undefined ? def.constraints.max : 99;
+      const maxLength = def.constraints?.maxLength || 10;
+      // Generate a random length between 5 and maxLength (bounded between 3 and maxLength)
+      const len = Math.max(3, Math.floor(Math.random() * (maxLength - 5 + 1)) + 5);
+      const randomArr = Array.from(
+        { length: Math.min(maxLength, len) }, 
+        () => Math.floor(Math.random() * (max - min + 1)) + min
+      );
       
       setFormValues(prev => ({
           ...prev,
@@ -72,17 +77,21 @@ export const InputEditor: React.FC<InputEditorProps> = ({ inputs, currentValues,
     
     // Case 2: Random Integer (Target)
     if (def.type === 'integer') {
-       const val = Math.floor(Math.random() * 100) + 1;
+       const min = def.constraints?.min !== undefined ? def.constraints.min : 1;
+       const max = def.constraints?.max !== undefined ? def.constraints.max : 100;
+       const val = Math.floor(Math.random() * (max - min + 1)) + min;
        setFormValues(prev => ({ ...prev, [def.id]: String(val) }));
     }
 
     // Case 3: Random String (for String Search)
     if (def.type === 'string') {
-        // Generate random string A-C for simplicity in visualizer
+        // Generate random string A-D for simplicity in visualizer
         const chars = "ABCD";
-        const len = def.constraints?.maxLength || 10;
+        const maxLength = def.constraints?.maxLength || 10;
+        const len = Math.max(3, Math.floor(Math.random() * (maxLength - 5 + 1)) + 5);
         let str = "";
-        for(let i=0; i<len; i++) str += chars.charAt(Math.floor(Math.random() * chars.length));
+        const finalLen = Math.min(maxLength, len);
+        for(let i=0; i<finalLen; i++) str += chars.charAt(Math.floor(Math.random() * chars.length));
         setFormValues(prev => ({ ...prev, [def.id]: str }));
     }
   };
