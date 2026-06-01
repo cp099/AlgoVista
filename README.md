@@ -24,13 +24,17 @@
 
 ---
 
-## Key Features
+## 🚀 Premium EdTech Visual Suite Features
 
-*   **Modular Algorithm Registry**: A dynamically configured glob loader system that automatically detects, parses, and displays registered algorithm modules on the fly.
-*   **Visual Telemetry Dashboard**: Step-by-step playback speed controllers, play/pause state scrubbing, responsive local state tables, active call stack tracking, and synchronized pseudocode highlights.
-*   **Aesthetic & Modern Themes**: High-contrast Slate-Gray light theme and synthetic-intelligence dark theme with premium gridline overlays, customizable themes, and custom-styled scrollbars.
-*   **Custom Rendering Engines**: Interactive rendering primitives built from the ground up for arrays, grids (`Matrix2D`), networks (`GraphNetwork`), and memory pipelines (`StackQueue`).
-*   **Universal Algorithm Directory**: High-precision search matching on category landing pages and the universal home search bar to immediately filter through mathematical, search, sorting, and graph suites.
+AlgoVista has been upgraded with a top-of-the-line interactive suite designed to transition learners from passive observers to active problem solvers:
+
+*   **Socratic Active Recall Quizzes**: Intercepts playback at critical checkpoints (such as pivot choices in Quicksort or queue shifts in BFS) with interactive multiple-choice checkpoints. Locks control actions and visual stages to reinforce logical understanding before continuing. Can be toggled on/off in preferences.
+*   **Multi-Language Code Playground**: Supports code tabs for Pseudocode, JavaScript, Python, C++, and Java. A line-by-line syntax translator keeps execution highlights synchronised across all languages. Features an editable editor interface allowing custom operator mutations and visual hot-reloads.
+*   **Auditory Sound Synthesizer**: Uses the browser's native **Web Audio API** to compile dynamic tone envelopes. Maps element heights to pitch frequencies and operation categories (`compare` / `visit` uses triangle waves, `swap` uses sawtooth, `write` uses sine, and complete/`lock` triggers an ascending arpeggio chime) for an immersive auditory experience.
+*   **Comparative Algo-Races**: Duel up to 3 sorting algorithms concurrently on a shared array. Features dynamic distribution presets (Random Mix, Reversed Worst Case, Nearly Sorted Best Case, Few Uniques) and displays real-time performance telemetry. Ranks finishers with Gold, Silver, and Bronze badges.
+*   **Classroom Presentation Mode**: Supports classroom-friendly URL serialization. Converted input parameters are encoded to Base64 query tags, generating shareable URLs for teachers to instantly distribute custom configurations.
+*   **Cinema Focus Mode**: Toggles a clean visual canvas mode that collapses sidebars and theory sections, scaling the stage to 100% viewport width. Re-measurement hooks ensure D3 node coordinates scale perfectly without layout distortion.
+*   **Modular Algorithm Registry**: A dynamically configured glob loader system that automatically detects, parses, and displays registered algorithm modules on the fly across 80+ visual sandboxes.
 
 ---
 
@@ -48,6 +52,7 @@ src/
 │   ├── layout/   # Responsive conditional layout templates, footers, and custom logos
 │   ├── pages/    # Suite dashboards, legal templates, and visual sandboxes
 │   └── views/    # Telemetry dashboards, code highlights, and theory drawers
+└── utils/        # Audio synthesizers, quiz registries, and guide decoders
 ```
 
 ---
