@@ -140,13 +140,15 @@ export const AlgorithmPage = () => {
           </p>
         </div>
         <div className="flex gap-3">
-          <button 
-            onClick={() => setShowInput(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-algo-surface hover:bg-algo-surface-hover text-sm font-bold rounded-xl border border-algo-border transition-all duration-300 text-algo-text shadow-sm active:scale-[0.97]"
-          >
-            <Settings size={16} />
-            Configure
-          </button>
+          {algoManifest.inputs && algoManifest.inputs.length > 0 && (
+            <button 
+              onClick={() => setShowInput(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-algo-surface hover:bg-algo-surface-hover text-sm font-bold rounded-xl border border-algo-border transition-all duration-300 text-algo-text shadow-sm active:scale-[0.97]"
+            >
+              <Settings size={16} />
+              Configure
+            </button>
+          )}
           <button 
             onClick={() => {
               handlePlay();

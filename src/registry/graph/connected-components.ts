@@ -14,14 +14,7 @@ const manifest = {
         '    count++',
         '    Traverse(v, visited) // e.g., using DFS or BFS'
     ],
-    inputs: [
-        {
-            id: 'note',
-            label: 'Graph is hardcoded to have 3 islands',
-            type: 'string' as const,
-            defaultValue: ""
-        }
-    ]
+    inputs: []
 };
 
 const run: AlgorithmBundle['run'] = function* (_inputs) {

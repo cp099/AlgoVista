@@ -14,15 +14,7 @@ const manifest = {
         '      if dist[i][k] + dist[k][j] < dist[i][j]:',
         '        dist[i][j] = dist[i][k] + dist[k][j]'
     ],
-    inputs: [
-        // Hardcoded graph for this demo
-        {
-            id: 'note',
-            label: 'Graph is hardcoded in this demo',
-            type: 'string' as const,
-            defaultValue: ""
-        }
-    ]
+    inputs: []
 };
 
 const run: AlgorithmBundle['run'] = function* (_inputs) {

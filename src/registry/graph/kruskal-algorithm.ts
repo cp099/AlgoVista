@@ -14,14 +14,7 @@ const manifest = {
         '    MST.add(u,v)',
         '    union(u,v)'
     ],
-    inputs: [
-        {
-            id: 'note',
-            label: 'Graph is hardcoded in this demo',
-            type: 'string' as const,
-            defaultValue: ""
-        }
-    ]
+    inputs: []
 };
 
 const run: AlgorithmBundle['run'] = function* (_inputs) {
