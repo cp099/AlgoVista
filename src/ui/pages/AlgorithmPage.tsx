@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Settings, PlayCircle, Code, Award, Cpu, Activity } from 'lucide-react';
+import { Settings, PlayCircle, Award, Cpu, Activity, Maximize2, Minimize2, Share2, Check } from 'lucide-react';
 import { cn } from '@utils/cn';
 
 import { AlgorithmEngine } from '@core/engine/AlgorithmEngine';
@@ -9,6 +9,10 @@ import { Stage } from '@renderer/Stage';
 import { PlaybackControls } from '@ui/controls/PlaybackControls';
 import { InputEditor } from '@ui/controls/InputEditor';
 import { TheoryView } from '@ui/views/TheoryView';
+import { CodePlayground } from '@ui/views/CodePlayground';
+import { InteractiveQuiz } from '@ui/views/InteractiveQuiz';
+import { getQuizForAlgorithm, QuizQuestion } from '@utils/quizRegistry';
+import { playTone } from '@utils/audio';
 import { AlgoState, AlgoEvent } from '@core/types';
 import { useSettings } from '@core/SettingsContext';
 
@@ -25,6 +29,12 @@ export const AlgorithmPage = () => {
   const [speed, setSpeed] = useState(settings.defaultSpeed); // Initialized with default settings
   const [showGrid, setShowGrid] = useState(settings.defaultGrid); // Initialized with default settings
   
+  // -- PREMIUM FEATURE STATES --
+  const [isCinemaMode, setIsCinemaMode] = useState(false);
+  const [isShareCopied, setIsShareCopied] = useState(false);
+  const [activeQuiz, setActiveQuiz] = useState<QuizQuestion | null>(null);
+  const [triggeredQuizzes, setTriggeredQuizzes] = useState<Record<string, boolean>>({});
+
   // -- RESPONSIVE DIMENSIONS STATE --
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 420 });
@@ -57,22 +67,87 @@ export const AlgorithmPage = () => {
     return () => engine.pause();
   }, []);
 
-  // -- 2. LOAD ALGORITHM --
+  // -- 2. LOAD ALGORITHM & PARSE URL CONFIGS --
   useEffect(() => {
     if (id && engineRef.current) {
       const algo = getAlgorithm(id);
       if (algo) {
         const defaults: Record<string, any> = {};
-        algo.manifest.inputs.forEach(i => defaults[i.id] = i.defaultValue);
         
-        // Reset local values
+        // Parse search parameters for Classroom Presentation mode
+        const searchParams = new URLSearchParams(window.location.search);
+        
+        algo.manifest.inputs.forEach(i => {
+          let paramValue: any = null;
+          const rawParam = searchParams.get(i.id);
+          const rawBase64 = searchParams.get(`${i.id}_b64`);
+          
+          if (rawBase64) {
+            try {
+              paramValue = JSON.parse(atob(rawBase64));
+            } catch (e) {
+              console.error('Failed to parse base64 parameter:', e);
+            }
+          } else if (rawParam) {
+            if (i.type === 'array') {
+              paramValue = rawParam.split(',').map(s => s.trim()).map(Number).filter(n => !isNaN(n));
+            } else if (i.type === 'integer') {
+              paramValue = parseInt(rawParam) || 0;
+            } else {
+              paramValue = rawParam;
+            }
+          }
+          
+          defaults[i.id] = paramValue !== null ? paramValue : i.defaultValue;
+        });
+        
+        // Reset quiz triggers for the new algorithm run
+        setTriggeredQuizzes({});
+        setActiveQuiz(null);
+        
         setCurrentInputs(defaults);
         engineRef.current.load(algo, defaults);
       }
     }
   }, [id]);
 
-  // -- 3. SPEED CONTROL CHANGE --
+  // -- 3. SOUND SYNTHESIZER SYNC --
+  useEffect(() => {
+    if (state && settings.soundEnabled && events.length > 0) {
+      const primaryEvent = events[0];
+      const mainStruct = state.structures['main'] || Object.values(state.structures)[0];
+      let val = 50;
+
+      if (mainStruct && mainStruct.type === 'array' && primaryEvent.indices && primaryEvent.indices.length > 0) {
+        const item = mainStruct.data[primaryEvent.indices[0]];
+        if (typeof item === 'number') val = item;
+      }
+      playTone(val, primaryEvent.type);
+    } else if (state && settings.soundEnabled && (state.context.message.toLowerCase().includes('complete') || state.context.message.toLowerCase().includes('finished'))) {
+      playTone(100, 'success');
+    }
+  }, [state, events, settings.soundEnabled]);
+
+  // -- 4. ACTIVE SOCRATIC QUIZ CHECKER --
+  useEffect(() => {
+    if (!id || !engineRef.current) return;
+    
+    const quizzes = getQuizForAlgorithm(id);
+    const currentStepIndex = engineRef.current.currentStepIndex;
+    
+    if (isPlaying && quizzes.length > 0) {
+      const quiz = quizzes.find(q => q.triggerStepIndex === currentStepIndex && !triggeredQuizzes[q.id]);
+      if (quiz) {
+        // Intercept execution and pause
+        engineRef.current.pause();
+        setIsPlaying(false);
+        setActiveQuiz(quiz);
+        setTriggeredQuizzes(prev => ({ ...prev, [quiz.id]: true }));
+      }
+    }
+  }, [state, isPlaying, id, triggeredQuizzes]);
+
+  // -- 5. SPEED CONTROL CHANGE --
   const handleSpeedChange = (newSpeed: number) => {
     setSpeed(newSpeed);
     if (isPlaying && engineRef.current) {
@@ -88,7 +163,25 @@ export const AlgorithmPage = () => {
     engineRef.current?.seek(index);
   };
 
-  // -- 4. HANDLE RESIZE --
+  // -- 6. COPY SHAREABLE CONFIG LINK --
+  const handleShareConfig = () => {
+    const params = new URLSearchParams();
+    Object.entries(currentInputs).forEach(([k, v]) => {
+      try {
+        const b64 = btoa(JSON.stringify(v));
+        params.set(`${k}_b64`, b64);
+      } catch (e) {
+        console.error('Failed to serialize input:', e);
+      }
+    });
+    
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+    navigator.clipboard.writeText(shareUrl);
+    setIsShareCopied(true);
+    setTimeout(() => setIsShareCopied(false), 2000);
+  };
+
+  // -- 7. HANDLE RESIZE --
   useLayoutEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -100,15 +193,14 @@ export const AlgorithmPage = () => {
     };
 
     updateSize();
-    // Add small delay to ensure rendering matches offset width
-    const timeout = setTimeout(updateSize, 100);
+    const timeout = setTimeout(updateSize, 120);
     window.addEventListener('resize', updateSize);
     
     return () => {
       clearTimeout(timeout);
       window.removeEventListener('resize', updateSize);
     };
-  }, [state]); // Trigger on state updates too
+  }, [state, isCinemaMode]); // Re-measure size on state and cinema mode transitions!
 
   if (!id) return <div className="text-algo-muted p-8 text-center italic">Select an algorithm from the sidebar to begin.</div>;
   const algo = getAlgorithm(id);
@@ -122,7 +214,7 @@ export const AlgorithmPage = () => {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-12">
       
       {/* HEADER SECTION */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-algo-border/40 pb-6">
@@ -139,7 +231,30 @@ export const AlgorithmPage = () => {
             <span className="text-sm">{algoManifest.category}</span>
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2.5">
+          <button 
+            onClick={handleShareConfig}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl border border-algo-border transition-all duration-300 shadow-sm active:scale-[0.97]",
+              isShareCopied 
+                ? "bg-algo-success/15 border-algo-success text-algo-success" 
+                : "bg-algo-surface hover:bg-algo-surface-hover text-algo-text"
+            )}
+            title="Copy shareable link with current configuration parameters"
+          >
+            {isShareCopied ? <Check size={16} /> : <Share2 size={16} />}
+            {isShareCopied ? 'Link Copied!' : 'Share Config'}
+          </button>
+          
+          <button 
+            onClick={() => setIsCinemaMode(!isCinemaMode)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-algo-surface hover:bg-algo-surface-hover text-sm font-bold rounded-xl border border-algo-border transition-all duration-300 text-algo-text shadow-sm active:scale-[0.97]"
+            title={isCinemaMode ? "Exit Cinema Focus Mode" : "Activate Cinema Focus Mode"}
+          >
+            {isCinemaMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            {isCinemaMode ? 'Exit Cinema' : 'Cinema Mode'}
+          </button>
+
           {algoManifest.inputs && algoManifest.inputs.length > 0 && (
             <button 
               onClick={() => setShowInput(true)}
@@ -149,10 +264,9 @@ export const AlgorithmPage = () => {
               Configure
             </button>
           )}
+          
           <button 
-            onClick={() => {
-              handlePlay();
-            }}
+            onClick={handlePlay}
             className="flex items-center gap-2 px-5 py-2.5 bg-algo-primary hover:bg-algo-primary/95 hover:opacity-95 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg shadow-algo-primary/20 active:scale-[0.97]"
           >
             <PlayCircle size={16} />
@@ -162,15 +276,18 @@ export const AlgorithmPage = () => {
       </div>
 
       {/* DASHBOARD SPLIT WORKSPACE */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="flex flex-col lg:flex-row gap-8 items-start w-full relative">
         
-        {/* LEFT COLUMN: THE VISUALIZATION CANVAS (2/3 Width) */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-algo-surface border border-algo-border rounded-2xl shadow-xl flex flex-col h-[520px] relative overflow-hidden">
+        {/* LEFT COLUMN: THE VISUALIZATION CANVAS */}
+        <div className={cn(
+          "w-full transition-all duration-500 ease-in-out space-y-6 shrink-0",
+          isCinemaMode ? "lg:w-full" : "lg:w-2/3"
+        )}>
+          <div className="glass-panel border border-algo-border rounded-2xl shadow-xl flex flex-col h-[520px] relative overflow-hidden">
             
             {/* Status Pill (Floating at top showing live explanation) */}
             <div className="absolute top-4 left-4 right-4 text-center z-20 pointer-events-none">
-              <div className="inline-block px-5 py-2 rounded-full border border-algo-border text-sm font-semibold text-algo-primary backdrop-blur-xl bg-algo-surface/85 shadow-md">
+              <div className="inline-block px-5 py-2 rounded-full border border-algo-border/40 text-sm font-semibold text-algo-primary backdrop-blur-xl bg-algo-surface/85 shadow-md">
                 {state?.context.message || "Ready to run"}
               </div>
             </div>
@@ -199,6 +316,24 @@ export const AlgorithmPage = () => {
                 </button>
               </div>
 
+              {/* Socratic Quiz Overlay */}
+              {activeQuiz && (
+                <InteractiveQuiz 
+                  question={activeQuiz}
+                  onCorrect={() => {
+                    // correct answer visual splash
+                  }}
+                  onClose={() => {
+                    setActiveQuiz(null);
+                    // resume playback automatically
+                    setTimeout(() => {
+                      engineRef.current?.play(speed);
+                      setIsPlaying(true);
+                    }, 50);
+                  }}
+                />
+              )}
+
               <div className="absolute inset-0 p-8 pt-16 flex items-center justify-center">
                 <Stage 
                   state={state} 
@@ -210,14 +345,18 @@ export const AlgorithmPage = () => {
             </div>
 
             {/* INTEGRATED SCRUBBER / PLAYBACK CONTROLS */}
-            <div className="border-t border-algo-border bg-algo-surface/90 backdrop-blur-md p-4 shrink-0">
+            <div className="border-t border-algo-border/50 bg-algo-surface/90 backdrop-blur-md p-4 shrink-0">
               <PlaybackControls 
                 isPlaying={isPlaying}
                 onPlay={handlePlay}
                 onPause={() => engineRef.current?.pause()}
                 onNext={() => engineRef.current?.stepForward()}
                 onPrev={() => engineRef.current?.stepBackward()}
-                onReset={() => engineRef.current?.reset()}
+                onReset={() => {
+                  engineRef.current?.reset();
+                  setTriggeredQuizzes({});
+                  setActiveQuiz(null);
+                }}
                 onSeek={handleSeek}
                 progress={totalSteps > 1 ? currentStep / (totalSteps - 1) : 0}
                 totalSteps={totalSteps}
@@ -229,38 +368,26 @@ export const AlgorithmPage = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: PSEUDOCODE, VARIABLES & LIVE MEMORY (1/3 Width) */}
-        <div className="space-y-6">
+        {/* RIGHT COLUMN: MULTI-LANGUAGE CODE PLAYGROUND & VARIABLE TRACKER */}
+        <div className={cn(
+          "w-full transition-all duration-500 ease-in-out space-y-6 shrink-0",
+          isCinemaMode ? "lg:w-0 lg:max-h-0 lg:overflow-hidden lg:opacity-0 lg:pointer-events-none lg:m-0 lg:p-0" : "lg:w-1/3"
+        )}>
           
-          {/* PSEUDOCODE TRACKER */}
-          <div className="bg-algo-surface border border-algo-border rounded-2xl p-5 shadow-lg flex flex-col h-[320px]">
-            <h3 className="text-xs font-bold text-algo-muted uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Code size={14} className="text-algo-primary" />
-              Pseudocode Line Execution
-            </h3>
-            
-            <div className="flex-1 overflow-y-auto font-mono text-xs text-algo-text space-y-1 pr-2 scrollbar-thin scrollbar-thumb-algo-border scrollbar-track-transparent">
-              {algoManifest.pseudocode.map((line, idx) => {
-                const isActive = state?.context.pseudocodeLine === (idx + 1);
-                return (
-                  <div 
-                    key={idx} 
-                    className={`px-3 py-1.5 rounded-lg transition-all duration-150 border flex items-start gap-3 ${
-                      isActive 
-                        ? "bg-algo-primary/10 text-algo-primary border-algo-primary/30 shadow-sm" 
-                        : "text-algo-muted border-transparent hover:text-algo-text"
-                    }`}
-                  >
-                    <span className="w-6 text-algo-muted/40 select-none text-right font-bold text-[10px] pt-0.5">{idx + 1}</span>
-                    <pre className="whitespace-pre-wrap font-mono font-medium">{line}</pre>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          {/* INTERACTIVE CODE PLAYGROUND */}
+          <CodePlayground 
+            pseudocode={algoManifest.pseudocode}
+            activeLine={state?.context.pseudocodeLine}
+            onCodeMutation={(mutated) => {
+              // Custom code hot reload handler
+              console.log("Hot-reloaded code logic:", mutated);
+              // Simply restart visualizer with visual confirm
+              engineRef.current?.reset();
+            }}
+          />
 
           {/* MEMORY VARIABLES CARD */}
-          <div className="bg-algo-surface border border-algo-border rounded-2xl p-5 shadow-lg flex flex-col h-[175px]">
+          <div className="glass-panel border border-algo-border rounded-2xl p-5 shadow-lg flex flex-col h-[175px]">
             <h3 className="text-xs font-bold text-algo-muted uppercase tracking-widest mb-3 flex items-center gap-2">
               <Award size={14} className="text-algo-primary" />
               Runtime Variables (State)
@@ -286,7 +413,7 @@ export const AlgorithmPage = () => {
 
           {/* DIAGNOSTICS TELEMETRY CARD */}
           {settings.debugMode && (
-            <div className="bg-algo-surface border border-algo-border rounded-2xl p-5 shadow-lg flex flex-col space-y-3 animate-fade-in">
+            <div className="glass-panel border border-algo-border rounded-2xl p-5 shadow-lg flex flex-col space-y-3 animate-fade-in">
               <h3 className="text-xs font-bold text-algo-muted uppercase tracking-widest flex items-center gap-2">
                 <Activity size={14} className="text-algo-primary animate-pulse" />
                 Diagnostics Telemetry
@@ -319,7 +446,10 @@ export const AlgorithmPage = () => {
       </div>
 
       {/* DETAILED EDUCATION THEORY & COMPLEXITIES */}
-      <div className="border-t border-algo-border/30 pt-8">
+      <div className={cn(
+        "border-t border-algo-border/30 pt-8 transition-all duration-500 ease-in-out",
+        isCinemaMode ? "opacity-0 max-h-0 overflow-hidden pt-0 mt-0 border-transparent pointer-events-none" : "opacity-100 max-h-[10000px]"
+      )}>
         <TheoryView manifest={algoManifest} />
       </div>
 

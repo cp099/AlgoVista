@@ -4,6 +4,7 @@ import { HomePage } from '@ui/pages/HomePage';
 import { CategoryPage } from '@ui/pages/CategoryPage';
 import { AlgorithmPage } from '@ui/pages/AlgorithmPage';
 import { NotFoundPage } from '@ui/pages/NotFoundPage'; 
+import { ComparisonRace } from '@ui/pages/ComparisonRace';
 
 // Import Legal/Info pages
 import { AboutPage } from '@ui/pages/AboutPage';
@@ -19,6 +20,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="category/:categoryId" element={<CategoryPage />} />
           <Route path="algo/:category/:id" element={<AlgorithmPage />} />
+          <Route path="race" element={<ComparisonRace />} />
           
           {/* Informational & Legal Routes */}
           <Route path="about" element={<AboutPage />} />

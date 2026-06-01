@@ -18,6 +18,9 @@
     --color-accent: #d97706; /* Amber accent */
     --color-success: #059669; /* Emerald success */
     --color-glow: rgba(79, 70, 229, 0.12); /* Subtle glow shadow */
+    /* GLASSMORPHISM EQUIVALENTS */
+    --color-surface-glass: rgba(255, 255, 255, 0.65);
+    --color-border-glass: rgba(226, 232, 240, 0.5);
   }
 
   .dark {
@@ -33,6 +36,10 @@
     --color-accent: #fbbf24;
     --color-success: #10b981;
     --color-glow: rgba(99, 102, 241, 0.35);
+
+    /* GLASSMORPHISM EQUIVALENTS */
+    --color-surface-glass: rgba(15, 23, 42, 0.65);
+    --color-border-glass: rgba(30, 41, 59, 0.5);
   }
 
   html, body, #root {
@@ -68,5 +75,30 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
+  }
+
+  /* Glassmorphism Panel Utility */
+  .glass-panel {
+    background-color: var(--color-surface-glass) !important;
+    border: 1px solid var(--color-border-glass) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  .dark .glass-panel {
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  /* SVG Active Glows */
+  .svg-glow {
+    filter: drop-shadow(0px 0px 8px var(--color-primary));
+  }
+  
+  .svg-success-glow {
+    filter: drop-shadow(0px 0px 8px var(--color-success));
+  }
+
+  .svg-accent-glow {
+    filter: drop-shadow(0px 0px 8px var(--color-accent));
   }
 }

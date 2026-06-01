@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Outlet, useLocation, Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Activity } from 'lucide-react';
+import { ThemeToggle } from '../controls/ThemeToggle';
 
 export const MainLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+
+  // Format breadcrumbs text
+  const getBreadcrumbs = () => {
+    if (isHomePage) return 'Dashboard';
+    const parts = location.pathname.split('/').filter(Boolean);
+    return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' > ');
+  };
 
   return (
     <div className="flex h-full w-full bg-algo-bg text-algo-text overflow-hidden relative font-sans">
@@ -24,14 +32,17 @@ export const MainLayout: React.FC = () => {
         <h1 className="inline-block font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-algo-text to-algo-primary pb-2 pr-2 pt-1 px-1 leading-normal">
           AlgoVista
         </h1>
-        {!isHomePage && (
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className="p-2 text-algo-muted hover:text-algo-text bg-algo-surface/50 border border-algo-border rounded-xl transition"
-          >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <ThemeToggle className="p-2 border-transparent bg-transparent hover:bg-algo-surface-hover/30 shadow-none" />
+          {!isHomePage && (
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              className="p-2 text-algo-muted hover:text-algo-text bg-algo-surface/50 border border-algo-border rounded-xl transition"
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* SIDEBAR CONTAINER */}
@@ -58,6 +69,25 @@ export const MainLayout: React.FC = () => {
       
       {/* MAIN CONTENT */}
       <main className="flex-1 h-full overflow-y-auto scroll-smooth w-full relative z-10 flex flex-col">
+        {/* Desktop Sticky Header / Topbar */}
+        <header className="hidden md:flex items-center justify-between px-10 py-4 border-b border-algo-border/30 bg-algo-surface/20 backdrop-blur-md shrink-0 sticky top-0 z-20">
+          <div className="text-xs font-mono text-algo-muted font-semibold tracking-wider flex items-center gap-2">
+            <span>ALGOVISTA CORE</span>
+            <span className="opacity-30">/</span>
+            <span className="text-algo-text uppercase">{getBreadcrumbs()}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/race"
+              className="flex items-center gap-2 px-4 py-2 bg-algo-primary/10 hover:bg-algo-primary/20 text-algo-primary border border-algo-primary/20 text-xs font-bold rounded-xl transition-all duration-300 active:scale-[0.98] shadow-sm"
+            >
+              <Activity size={14} className="animate-pulse" />
+              Algo-Race Duel
+            </Link>
+            <ThemeToggle />
+          </div>
+        </header>
+
         {/* Add padding top on mobile to account for the header */}
         <div className="pt-20 md:pt-8 p-6 md:p-10 max-w-[1400px] mx-auto pb-8 flex-1 w-full">
           <Outlet /> 
