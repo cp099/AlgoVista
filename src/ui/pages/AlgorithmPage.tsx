@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Settings, PlayCircle, Award, Cpu, Activity, Maximize2, Minimize2, Share2, Check } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import { Settings, PlayCircle, Award, Cpu, Activity, Maximize2, Minimize2, Share2, Check, ArrowLeft } from 'lucide-react';
 import { cn } from '@utils/cn';
 
 import { AlgorithmEngine } from '@core/engine/AlgorithmEngine';
@@ -214,8 +214,19 @@ export const AlgorithmPage = () => {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
+    <div className="space-y-6 animate-fade-in pb-12">
       
+      {/* BACK BUTTON */}
+      <div className="flex items-center shrink-0">
+        <Link 
+          to={`/category/${algoManifest.category.toLowerCase()}`}
+          className="flex items-center gap-1.5 text-xs font-bold text-algo-muted hover:text-algo-primary transition duration-300 group"
+        >
+          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          Back to {algoManifest.category} Suite
+        </Link>
+      </div>
+
       {/* HEADER SECTION */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-algo-border/40 pb-6">
         <div>

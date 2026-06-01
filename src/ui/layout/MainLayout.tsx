@@ -12,7 +12,8 @@ export const MainLayout: React.FC = () => {
   // Format breadcrumbs text
   const getBreadcrumbs = () => {
     if (isHomePage) return 'Dashboard';
-    const parts = location.pathname.split('/').filter(Boolean);
+    const decoded = decodeURIComponent(location.pathname);
+    const parts = decoded.split('/').filter(Boolean);
     return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' > ');
   };
 
