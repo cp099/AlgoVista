@@ -87,11 +87,11 @@ export const Stage: React.FC<StageProps> = ({ state, lastEvents, width = 800, he
   if (isVerticalSplit) {
       return (
         <div className="w-full h-full flex gap-4 p-4">
-            <div className="flex-[4] bg-algo-bg/50 rounded-xl border border-algo-border relative shadow-sm">
+            <div className="flex-[4] bg-algo-bg/50 rounded-xl border border-algo-border relative shadow-sm overflow-hidden">
                  <span className="absolute top-3 left-3 text-xs font-mono font-bold text-algo-muted uppercase tracking-wider bg-algo-surface border border-algo-border px-3 py-1 rounded-full shadow-sm z-10">
                     {mainGraph.id}
                 </span>
-                <svg width="100%" height="100%" className="overflow-visible">
+                <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" className="w-full h-full block overflow-visible">
                     {renderStructure(mainGraph, width, height)}
                 </svg>
             </div>
@@ -125,19 +125,19 @@ export const Stage: React.FC<StageProps> = ({ state, lastEvents, width = 800, he
   if (isDualStack) {
       return (
         <div className="w-full h-full flex items-center justify-around gap-8 p-4">
-            <div className="w-1/2 h-full relative">
+            <div className="w-1/2 h-full relative overflow-hidden">
                  <span className="absolute top-0 left-0 text-xs font-mono font-bold text-algo-muted uppercase tracking-wider bg-algo-surface px-2 py-1 rounded">
                     {mainArray!.id}
                 </span>
-                <svg width="100%" height="100%" className="overflow-visible">
+                <svg viewBox={`0 0 ${width / 2} ${height}`} preserveAspectRatio="xMidYMid meet" className="w-full h-full block overflow-visible">
                     {renderStructure(mainArray!, width / 2, height)}
                 </svg>
             </div>
-            <div className="w-1/2 h-full relative">
+            <div className="w-1/2 h-full relative overflow-hidden">
                  <span className="absolute top-0 left-0 text-xs font-mono font-bold text-algo-muted uppercase tracking-wider bg-algo-surface px-2 py-1 rounded">
                     {auxStructs[0].id}
                 </span>
-                <svg width="100%" height="100%" className="overflow-visible">
+                <svg viewBox={`0 0 ${width / 2} ${height}`} preserveAspectRatio="xMidYMid meet" className="w-full h-full block overflow-visible">
                     {renderStructure(auxStructs[0], width / 2, height)}
                 </svg>
             </div>
@@ -157,12 +157,12 @@ export const Stage: React.FC<StageProps> = ({ state, lastEvents, width = 800, he
 
       return (
         <div className="w-full h-full flex flex-col gap-4 p-4">
-            <div className="flex-none h-[160px] bg-algo-bg/50 rounded-xl border border-algo-border relative shadow-sm">
+            <div className="flex-none h-[160px] bg-algo-bg/50 rounded-xl border border-algo-border relative shadow-sm overflow-hidden">
                 <span className="absolute top-3 left-3 text-xs font-mono font-bold text-algo-muted uppercase tracking-wider bg-algo-surface border border-algo-border px-3 py-1 rounded-full shadow-sm z-10">
                     {structures[0].id}
                 </span>
                 <div className="w-full h-full p-4 pt-10"> 
-                    <svg width="100%" height="100%" className="overflow-visible">
+                    <svg viewBox="0 0 800 120" preserveAspectRatio="xMidYMid meet" className="w-full h-full block overflow-visible">
                         {renderStructure(structures[0], 800, 120)}
                     </svg>
                 </div>

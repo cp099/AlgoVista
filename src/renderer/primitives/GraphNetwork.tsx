@@ -51,7 +51,7 @@ export const GraphNetwork: React.FC<GraphNetworkProps> = ({ id, nodes, edges, ac
         const graphHeight = maxY - minY;
 
         // Calculate scale factor to fit inside container (with padding)
-        const padding = 50;
+        const padding = 65;
         const scaleX = (width - 2 * padding) / graphWidth;
         const scaleY = (height - 2 * padding) / graphHeight;
         const scale = Math.min(scaleX, scaleY); // Use smallest scale to maintain aspect ratio
