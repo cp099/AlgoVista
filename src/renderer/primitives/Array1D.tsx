@@ -159,108 +159,104 @@ export const Array1D: React.FC<Array1DProps> = ({
   };
 
   return (
-    <div className="w-full h-full">
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible w-full h-full">
-        <g className="transition-all duration-300 ease-in-out">
-          {data.map((val, i) => {
-            const x = i * (barWidth + gap);
-            let barHeight, y;
+    <g className="transition-all duration-300 ease-in-out">
+      {data.map((val, i) => {
+        const x = i * (barWidth + gap);
+        let barHeight, y;
 
-            if (isStringData) {
-                // --- BOX MODE ---
-                const preferredSize = 40;
-                const spacing = 4;
-                const neededWidth = len * (preferredSize + spacing);
-                
-                if (neededWidth <= width) {
-                    const startX = (width - neededWidth) / 2;
-                    const finalX = startX + i * (preferredSize + spacing);
-                    const finalY = (drawingHeight - preferredSize) / 2;
-                    const barCol = getBarColor(i);
-                    const isActive = !barCol.includes('fill-algo-surface');
-
-                    return (
-                        <g key={i} transform={`translate(${finalX}, 0)`}>
-                            <rect 
-                                y={finalY} 
-                                width={preferredSize} 
-                                height={preferredSize} 
-                                rx={6} 
-                                className={cn(
-                                    "transition-all duration-150", 
-                                    nodeStyle === 'contrast' && "stroke-[3px]",
-                                    nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_5px_rgba(99,102,241,0.3)]",
-                                    barCol
-                                )} 
-                            />
-                            <text x={preferredSize/2} y={finalY + preferredSize/2 + 5} textAnchor="middle" className={cn("font-mono font-bold select-none text-xl", barCol.includes('fill-algo-surface') ? "fill-algo-text" : "fill-white")}>{val}</text>
-                            <text x={preferredSize/2} y={height - 5} textAnchor="middle" className="fill-algo-muted text-[10px] font-mono">{i}</text>
-                        </g>
-                    );
-                } else {
-                    const dynamicGap = 2;
-                    const dynamicWidth = (width - (dynamicGap * (len - 1))) / len;
-                    const dynamicSize = Math.min(dynamicWidth, 40);
-                    const finalX = i * (dynamicWidth + dynamicGap);
-                    const finalY = (drawingHeight - dynamicSize) / 2;
-                    const barCol = getBarColor(i);
-                    const isActive = !barCol.includes('fill-algo-surface');
-
-                    return (
-                        <g key={i} transform={`translate(${finalX}, 0)`}>
-                            <rect 
-                                y={finalY} 
-                                width={dynamicSize} 
-                                height={dynamicSize} 
-                                rx={4} 
-                                className={cn(
-                                    "transition-all duration-150", 
-                                    nodeStyle === 'contrast' && "stroke-[2.5px]",
-                                    nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_4px_rgba(99,102,241,0.3)]",
-                                    barCol
-                                )} 
-                            />
-                            {dynamicSize > 12 && (
-                                <text x={dynamicSize/2} y={finalY + dynamicSize/2 + 4} textAnchor="middle" className={cn("font-mono font-bold select-none", barCol.includes('fill-algo-surface') ? "fill-algo-text" : "fill-white")} style={{ fontSize: `${dynamicSize * 0.5}px` }}>{val}</text>
-                            )}
-                            {dynamicSize > 20 && (
-                                <text x={dynamicSize/2} y={height - 5} textAnchor="middle" className="fill-algo-muted text-[10px] font-mono">{i}</text>
-                            )}
-                        </g>
-                    );
-                }
-            } else {
-                // --- BAR MODE ---
-                let pct = (val as number) / maxVal;
-                barHeight = pct * drawingHeight;
-                barHeight = Math.max(barHeight, isCompact ? 2 : 5);
-                y = drawingHeight - barHeight;
+        if (isStringData) {
+            // --- BOX MODE ---
+            const preferredSize = 40;
+            const spacing = 4;
+            const neededWidth = len * (preferredSize + spacing);
+            
+            if (neededWidth <= width) {
+                const startX = (width - neededWidth) / 2;
+                const finalX = startX + i * (preferredSize + spacing);
+                const finalY = (drawingHeight - preferredSize) / 2;
                 const barCol = getBarColor(i);
-                const isActive = barCol !== 'fill-algo-primary';
+                const isActive = !barCol.includes('fill-algo-surface');
 
                 return (
-                    <g key={i} transform={`translate(${x}, 0)`}>
+                    <g key={i} transform={`translate(${finalX}, 0)`}>
                         <rect 
-                            y={y} 
-                            width={barWidth} 
-                            height={barHeight} 
-                            rx={isCompact ? 1 : 4} 
+                            y={finalY} 
+                            width={preferredSize} 
+                            height={preferredSize} 
+                            rx={6} 
                             className={cn(
                                 "transition-all duration-150", 
-                                nodeStyle === 'contrast' && "stroke-[2.5px]",
-                                nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_6px_rgba(99,102,241,0.3)]",
+                                nodeStyle === 'contrast' && "stroke-[3px]",
+                                nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_5px_rgba(99,102,241,0.3)]",
                                 barCol
                             )} 
                         />
-                        {barWidth > 12 && (
-                            <text x={barWidth / 2} y={height - 10} textAnchor="middle" className="fill-algo-text font-mono font-bold select-none" style={{ fontSize: isCompact ? '10px' : '12px' }}>{val}</text>
+                        <text x={preferredSize/2} y={finalY + preferredSize/2 + 5} textAnchor="middle" className={cn("font-mono font-bold select-none text-xl", barCol.includes('fill-algo-surface') ? "fill-algo-text" : "fill-white")}>{val}</text>
+                        <text x={preferredSize/2} y={height - 5} textAnchor="middle" className="fill-algo-muted text-[10px] font-mono">{i}</text>
+                    </g>
+                );
+            } else {
+                const dynamicGap = 2;
+                const dynamicWidth = (width - (dynamicGap * (len - 1))) / len;
+                const dynamicSize = Math.min(dynamicWidth, 40);
+                const finalX = i * (dynamicWidth + dynamicGap);
+                const finalY = (drawingHeight - dynamicSize) / 2;
+                const barCol = getBarColor(i);
+                const isActive = !barCol.includes('fill-algo-surface');
+
+                return (
+                    <g key={i} transform={`translate(${finalX}, 0)`}>
+                        <rect 
+                            y={finalY} 
+                            width={dynamicSize} 
+                            height={dynamicSize} 
+                            rx={4} 
+                            className={cn(
+                                "transition-all duration-150", 
+                                nodeStyle === 'contrast' && "stroke-[2.5px]",
+                                nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_4px_rgba(99,102,241,0.3)]",
+                                barCol
+                            )} 
+                        />
+                        {dynamicSize > 12 && (
+                            <text x={dynamicSize/2} y={finalY + dynamicSize/2 + 4} textAnchor="middle" className={cn("font-mono font-bold select-none", barCol.includes('fill-algo-surface') ? "fill-algo-text" : "fill-white")} style={{ fontSize: `${dynamicSize * 0.5}px` }}>{val}</text>
+                        )}
+                        {dynamicSize > 20 && (
+                            <text x={dynamicSize/2} y={height - 5} textAnchor="middle" className="fill-algo-muted text-[10px] font-mono">{i}</text>
                         )}
                     </g>
                 );
             }
-          })}
-        </g>
-      </svg>
-    </div>
+        } else {
+            // --- BAR MODE ---
+            let pct = (val as number) / maxVal;
+            barHeight = pct * drawingHeight;
+            barHeight = Math.max(barHeight, isCompact ? 2 : 5);
+            y = drawingHeight - barHeight;
+            const barCol = getBarColor(i);
+            const isActive = barCol !== 'fill-algo-primary';
+
+            return (
+                <g key={i} transform={`translate(${x}, 0)`}>
+                    <rect 
+                        y={y} 
+                        width={barWidth} 
+                        height={barHeight} 
+                        rx={isCompact ? 1 : 4} 
+                        className={cn(
+                            "transition-all duration-150", 
+                            nodeStyle === 'contrast' && "stroke-[2.5px]",
+                            nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_6px_rgba(99,102,241,0.3)]",
+                            barCol
+                        )} 
+                    />
+                    {barWidth > 12 && (
+                        <text x={barWidth / 2} y={height - 10} textAnchor="middle" className="fill-algo-text font-mono font-bold select-none" style={{ fontSize: isCompact ? '10px' : '12px' }}>{val}</text>
+                    )}
+                </g>
+            );
+        }
+      })}
+    </g>
   );
 };
