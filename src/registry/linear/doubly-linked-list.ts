@@ -42,7 +42,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let head: DLLNode | null = null;
     let tail: DLLNode | null = null;
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         
@@ -78,11 +78,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             structures: { 
                 'main': { type: 'graph', id: 'Doubly Linked List', nodes, edges, isDirected: true }
             },
-            context: { variables: { head: head?.val ?? 'null', tail: tail?.val ?? 'null' }, message: msg }
+            context: { variables: { head: head?.val ?? 'null', tail: tail?.val ?? 'null' }, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Initialized Empty List"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Initialized Empty List", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. Build Initial List
     for(const val of sequence) {
@@ -94,12 +94,12 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             newNode.prev = tail;
             tail = newNode;
         }
-        yield { snapshot: makeState(`Appended ${val}`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+        yield { snapshot: makeState(`Appended ${val}`, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
     }
     
     // 2. Insert 25 in Middle
     let valToInsert = 25;
-    yield { snapshot: makeState(`Inserting ${valToInsert} after 20`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(`Inserting ${valToInsert} after 20`, 2), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
     
     let p = head;
     while(p && p.val !== 20) p = p.next;
@@ -112,10 +112,10 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         p.next = newNode;
         if (newNode.next === null) tail = newNode;
     }
-    yield { snapshot: makeState(`Inserted ${valToInsert}`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(`Inserted ${valToInsert}`, 5), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 3. Delete Node (25)
-    yield { snapshot: makeState(`Deleting 25`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(`Deleting 25`, 8), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
     let nodeToDelete = p ? p.next : null;
     if (nodeToDelete) {
         if(nodeToDelete.prev) nodeToDelete.prev.next = nodeToDelete.next;
@@ -124,10 +124,10 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if(nodeToDelete.next) nodeToDelete.next.prev = nodeToDelete.prev;
         else tail = nodeToDelete.prev;
     }
-    yield { snapshot: makeState(`Deleted 25`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(`Deleted 25`, 9), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
 
-    yield { snapshot: makeState("Operations Complete"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Operations Complete", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

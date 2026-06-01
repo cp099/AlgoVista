@@ -45,9 +45,9 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars, target }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars, target }, pseudocodeLine: line, message: msg }
     });
 
     // Initialize Fibonacci numbers
@@ -62,7 +62,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         fibM = fibM2 + fibM1;
     }
 
-    yield { snapshot: makeState({ fibM, fibM1, fibM2 }, "Initialized Fibonacci Numbers"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({ fibM, fibM1, fibM2 }, "Initialized Fibonacci Numbers", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     let offset = -1;
 
@@ -72,14 +72,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         
         comparisons++;
         yield { 
-            snapshot: makeState({ i, val: arr[i], fibM2, offset }, `Checking index ${i} (Offset + FibM2)`), 
+            snapshot: makeState({ i, val: arr[i], fibM2, offset }, `Checking index ${i} (Offset + FibM2)`, 7), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [i] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
 
         if (arr[i] < target) {
             yield { 
-                snapshot: makeState({ i, result: 'Small' }, `${arr[i]} < ${target}. Moving offset to ${i}. Reducing Fib.`), 
+                snapshot: makeState({ i, result: 'Small' }, `${arr[i]} < ${target}. Moving offset to ${i}. Reducing Fib.`, 9), 
                 events: [],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -90,7 +90,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         } 
         else if (arr[i] > target) {
             yield { 
-                snapshot: makeState({ i, result: 'Large' }, `${arr[i]} > ${target}. Cutting Fib by 2 steps.`), 
+                snapshot: makeState({ i, result: 'Large' }, `${arr[i]} > ${target}. Cutting Fib by 2 steps.`, 12), 
                 events: [],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -100,7 +100,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         } 
         else {
             yield { 
-                snapshot: makeState({ i, result: i }, `Found target at ${i}!`), 
+                snapshot: makeState({ i, result: i }, `Found target at ${i}!`, 13), 
                 events: [{ type: 'lock', targetIds: ['main'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -111,7 +111,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     // Check last element
     if (fibM1 && arr[offset + 1] === target) {
         yield { 
-            snapshot: makeState({ i: offset+1, result: offset+1 }, `Found at ${offset+1}`), 
+            snapshot: makeState({ i: offset+1, result: offset+1 }, `Found at ${offset+1}`, 13), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [offset+1] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
@@ -119,7 +119,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({ result: -1 }, "Target not found"), 
+        snapshot: makeState({ result: -1 }, "Target not found", 14), 
         events: [], 
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

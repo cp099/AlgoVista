@@ -39,15 +39,15 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let totalWater = 0;
     let comparisons = 0, writes = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'elevation': { type: 'array', id: 'Elevation', data: [...heights], visualMode: 'bar' },
             'water': { type: 'array', id: 'Trapped Water', data: [...waterLevels], visualMode: 'bar', baseColor: 'fill-blue-700' }
         },
-        context: { variables: { totalWater, ...vars }, message: msg }
+        context: { pseudocodeLine: line, variables: { totalWater, ...vars }, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Two-Pointer Approach"), events: [], metrics: { comparisons, swaps: 0, writes } };
+    yield { snapshot: makeState("Starting Two-Pointer Approach", {}, 1), events: [], metrics: { comparisons, swaps: 0, writes } };
 
     let left = 0, right = n - 1;
     let leftMax = 0, rightMax = 0;
@@ -55,7 +55,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     while (left < right) {
         comparisons++;
         yield { 
-            snapshot: makeState(`Comparing heights at Left(${left}) and Right(${right})`, { left, right, leftMax, rightMax }), 
+            snapshot: makeState(`Comparing heights at Left(${left}) and Right(${right})`, { left, right, leftMax, rightMax }, 4), 
             events: [
                 { type: 'compare', targetIds: ['Elevation'], indices: [left] },
                 { type: 'compare', targetIds: ['Elevation'], indices: [right] }
@@ -68,7 +68,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (heights[left] >= leftMax) {
                 leftMax = heights[left];
                  yield { 
-                    snapshot: makeState(`New Left Max found: ${leftMax}`, { left, right, leftMax, rightMax }), 
+                    snapshot: makeState(`New Left Max found: ${leftMax}`, { left, right, leftMax, rightMax }, 6), 
                     events: [{ type: 'visit', targetIds: ['Elevation'], indices: [left] }],
                     metrics: { comparisons, swaps: 0, writes }
                 };
@@ -78,7 +78,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 waterLevels[left] = waterToAdd;
                 writes++;
                 yield { 
-                    snapshot: makeState(`Trapping ${waterToAdd} units of water at index ${left}`), 
+                    snapshot: makeState(`Trapping ${waterToAdd} units of water at index ${left}`, {}, 7), 
                     events: [{ type: 'write', targetIds: ['Trapped Water'], indices: [left] }],
                     metrics: { comparisons, swaps: 0, writes }
                 };
@@ -89,7 +89,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (heights[right] >= rightMax) {
                 rightMax = heights[right];
                  yield { 
-                    snapshot: makeState(`New Right Max found: ${rightMax}`, { left, right, leftMax, rightMax }), 
+                    snapshot: makeState(`New Right Max found: ${rightMax}`, { left, right, leftMax, rightMax }, 10), 
                     events: [{ type: 'visit', targetIds: ['Elevation'], indices: [right] }],
                     metrics: { comparisons, swaps: 0, writes }
                 };
@@ -99,7 +99,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 waterLevels[right] = waterToAdd;
                 writes++;
                  yield { 
-                    snapshot: makeState(`Trapping ${waterToAdd} units of water at index ${right}`), 
+                    snapshot: makeState(`Trapping ${waterToAdd} units of water at index ${right}`, {}, 7), 
                     events: [{ type: 'write', targetIds: ['Trapped Water'], indices: [right] }],
                     metrics: { comparisons, swaps: 0, writes }
                 };
@@ -109,7 +109,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState(`Complete. Total Water: ${totalWater}`), 
+        snapshot: makeState(`Complete. Total Water: ${totalWater}`, {}, 1), 
         events: [],
         metrics: { comparisons, swaps: 0, writes }
     };

@@ -41,7 +41,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
     const compact: (number|string)[] = [];
     let writes = 0;
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const structures: Record<string, any> = {};
         
         // Create a structure for each row of the original matrix
@@ -64,18 +64,18 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
         
         return {
             structures,
-            context: { variables: { NonZeroCount: compact.length / 3 }, message: msg }
+            context: { pseudocodeLine: line, variables: { NonZeroCount: compact.length / 3 }, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Starting Sparse Matrix Conversion"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Sparse Matrix Conversion", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // Scan the matrix
     for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
             
             yield { 
-                snapshot: makeState(`Scanning cell [${i},${j}]`), 
+                snapshot: makeState(`Scanning cell [${i},${j}]`, 2), 
                 events: [{ type: 'compare', targetIds: [`row${i}`], indices: [j] }],
                 metrics: { comparisons: 1, swaps: 0, writes } 
             };
@@ -83,7 +83,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
             if (matrix[i][j] !== 0) {
                 const val = matrix[i][j];
                 yield { 
-                    snapshot: makeState(`Found non-zero value: ${val}`), 
+                    snapshot: makeState(`Found non-zero value: ${val}`, 4), 
                     events: [{ type: 'lock', targetIds: [`row${i}`], indices: [j] }],
                     metrics: { comparisons: 0, swaps: 0, writes } 
                 };
@@ -106,7 +106,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
     }
 
     yield { 
-        snapshot: makeState("Conversion Complete"), 
+        snapshot: makeState("Conversion Complete", 1), 
         events: [{ type: 'lock', targetIds: ['Compact (Row, Col, Val)'], indices: Array.from({length: compact.length}, (_, k) => k)}],
         metrics: { comparisons: 0, swaps: 0, writes } 
     };

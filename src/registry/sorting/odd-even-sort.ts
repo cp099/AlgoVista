@@ -31,21 +31,21 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
     let sorted = false;
     
-    yield { snapshot: makeState({}, "Starting Odd-Even Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting Odd-Even Sort", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     while (!sorted) {
         sorted = true;
 
         // ODD PHASE
         yield { 
-            snapshot: makeState({ phase: 'ODD' }, "Phase 1: Odd Indices"), 
+            snapshot: makeState({ phase: 'ODD' }, "Phase 1: Odd Indices", 4), 
             events: [],
             metrics: { comparisons, swaps, writes: 0 } 
         };
@@ -53,7 +53,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let i = 1; i <= n - 2; i += 2) {
             comparisons++;
             yield { 
-                snapshot: makeState({ phase: 'ODD', i, j: i+1 }, `Checking ${arr[i]} vs ${arr[i+1]}`), 
+                snapshot: makeState({ phase: 'ODD', i, j: i+1 }, `Checking ${arr[i]} vs ${arr[i+1]}`, 5), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i, i+1] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -63,7 +63,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 swaps++;
                 sorted = false;
                 yield { 
-                    snapshot: makeState({ phase: 'ODD', i, j: i+1 }, `Swapping ${arr[i]} and ${arr[i+1]}`), 
+                    snapshot: makeState({ phase: 'ODD', i, j: i+1 }, `Swapping ${arr[i]} and ${arr[i+1]}`, 5), 
                     events: [{ type: 'swap', targetIds: ['main'], indices: [i, i+1] }],
                     metrics: { comparisons, swaps, writes: 0 } 
                 };
@@ -72,7 +72,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         // EVEN PHASE
         yield { 
-            snapshot: makeState({ phase: 'EVEN' }, "Phase 2: Even Indices"), 
+            snapshot: makeState({ phase: 'EVEN' }, "Phase 2: Even Indices", 6), 
             events: [],
             metrics: { comparisons, swaps, writes: 0 } 
         };
@@ -80,7 +80,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let i = 0; i <= n - 2; i += 2) {
             comparisons++;
             yield { 
-                snapshot: makeState({ phase: 'EVEN', i, j: i+1 }, `Checking ${arr[i]} vs ${arr[i+1]}`), 
+                snapshot: makeState({ phase: 'EVEN', i, j: i+1 }, `Checking ${arr[i]} vs ${arr[i+1]}`, 5), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i, i+1] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -90,7 +90,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 swaps++;
                 sorted = false;
                 yield { 
-                    snapshot: makeState({ phase: 'EVEN', i, j: i+1 }, `Swapping ${arr[i]} and ${arr[i+1]}`), 
+                    snapshot: makeState({ phase: 'EVEN', i, j: i+1 }, `Swapping ${arr[i]} and ${arr[i+1]}`, 5), 
                     events: [{ type: 'swap', targetIds: ['main'], indices: [i, i+1] }],
                     metrics: { comparisons, swaps, writes: 0 } 
                 };
@@ -99,7 +99,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "Odd-Even Sort Complete"), 
+        snapshot: makeState({}, "Odd-Even Sort Complete", 2), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes: 0 } 
     };

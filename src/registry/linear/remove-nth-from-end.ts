@@ -62,10 +62,8 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     let head = dummy.next;
 
-    const makeState = (
-        msg: string,
-        vars: { slow?: LLNode | null; fast?: LLNode | null } = {}
-    ): AlgoState => {
+    const makeState = (msg: string,
+        vars: { slow?: LLNode | null; fast?: LLNode | null } = {}, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
 
@@ -129,7 +127,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                     isDirected: true
                 }
             },
-            context: {
+            context: { pseudocodeLine: line,
                 variables: { n },
                 message: msg
             }
@@ -137,14 +135,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     };
 
     yield {
-        snapshot: makeState('Initial List'),
+        snapshot: makeState('Initial List', {}, 1),
         events: [],
         metrics: { comparisons, swaps, writes }
     };
 
     if (!head) {
         yield {
-            snapshot: makeState('List is empty.'),
+            snapshot: makeState('List is empty.', {}, 1),
             events: [],
             metrics: { comparisons, swaps, writes }
         };
@@ -155,7 +153,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let fast: LLNode | null = dummy;
 
     yield {
-        snapshot: makeState(`Moving Fast pointer ${n} steps ahead`, { slow, fast }),
+        snapshot: makeState(`Moving Fast pointer ${n} steps ahead`, { slow, fast }, 3),
         events: [],
         metrics: { comparisons, swaps, writes }
     };
@@ -163,7 +161,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     for (let i = 1; i <= n + 1; i++) {
         if (!fast) {
             yield {
-                snapshot: makeState('Error: n is larger than list'),
+                snapshot: makeState('Error: n is larger than list', {}, 1),
                 events: [],
                 metrics: { comparisons, swaps, writes }
             };
@@ -174,14 +172,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield {
-        snapshot: makeState('Gap created', { slow, fast }),
+        snapshot: makeState('Gap created', { slow, fast }, 3),
         events: [],
         metrics: { comparisons, swaps, writes }
     };
 
     while (fast !== null) {
         yield {
-            snapshot: makeState('Moving both pointers', { slow, fast }),
+            snapshot: makeState('Moving both pointers', { slow, fast }, 4),
             events: [],
             metrics: { comparisons, swaps, writes }
         };
@@ -207,13 +205,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     head = dummy.next;
 
     yield {
-        snapshot: makeState('Node deleted. List rewired.', { slow, fast }),
+        snapshot: makeState('Node deleted. List rewired.', { slow, fast }, 7),
         events: [],
         metrics: { comparisons, swaps, writes }
     };
 
     yield {
-        snapshot: makeState('Operation Complete'),
+        snapshot: makeState('Operation Complete', {}, 8),
         events: [],
         metrics: { comparisons, swaps, writes }
     };

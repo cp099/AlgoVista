@@ -33,17 +33,17 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const RUN = 4; // Small run size for visualization
     let comparisons = 0, writes = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { n, RUN, ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { n, RUN, ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, "Starting TimSort (Run Size = 4)"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting TimSort (Run Size = 4)", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // --- HELPER: Insertion Sort for a range ---
     function* insertionSort(left: number, right: number): Generator<any> {
         yield { 
-            snapshot: makeState({ left, right }, `Processing Run [${left}..${right}] using Insertion Sort`), 
+            snapshot: makeState({ left, right }, `Processing Run [${left}..${right}] using Insertion Sort`, 3), 
             events: [{ type: 'visit', targetIds: ['main'], indices: Array.from({length: right-left+1}, (_, k) => k + left) }],
             metrics: { comparisons, swaps: 0, writes }
         };
@@ -63,7 +63,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 writes++;
                 
                 yield { 
-                    snapshot: makeState({ left, right, i, j, key }, `Shifting`), 
+                    snapshot: makeState({ left, right, i, j, key }, `Shifting`, 3), 
                     events: [{ type: 'write', targetIds: ['main'], indices: [j+1] }],
                     metrics: { comparisons, swaps: 0, writes }
                 };
@@ -72,7 +72,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             arr[j + 1] = key;
             writes++;
             yield { 
-                snapshot: makeState({ left, right, i, key }, `Inserted ${key}`), 
+                snapshot: makeState({ left, right, i, key }, `Inserted ${key}`, 3), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [j+1] }],
                 metrics: { comparisons, swaps: 0, writes }
             };
@@ -92,7 +92,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         let i = 0, j = 0, k = l;
 
         yield { 
-            snapshot: makeState({ l, m, r }, `Merging runs [${l}..${m}] and [${m+1}..${r}]`), 
+            snapshot: makeState({ l, m, r }, `Merging runs [${l}..${m}] and [${m+1}..${r}]`, 8), 
             events: [{ type: 'visit', targetIds: ['main'], indices: Array.from({length: r-l+1}, (_, idx) => idx + l) }],
             metrics: { comparisons, swaps: 0, writes }
         };
@@ -100,7 +100,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         while (i < len1 && j < len2) {
             comparisons++;
             yield { 
-                snapshot: makeState({ i, j, k, leftVal: leftArr[i], rightVal: rightArr[j] }, `Comparing ${leftArr[i]} vs ${rightArr[j]}`), 
+                snapshot: makeState({ i, j, k, leftVal: leftArr[i], rightVal: rightArr[j] }, `Comparing ${leftArr[i]} vs ${rightArr[j]}`, 8), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [l+i, m+1+j] }],
                 metrics: { comparisons, swaps: 0, writes }
             };
@@ -114,7 +114,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             }
             writes++;
             yield { 
-                snapshot: makeState({ k }, `Writing to position ${k}`), 
+                snapshot: makeState({ k }, `Writing to position ${k}`, 8), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [k] }],
                 metrics: { comparisons, swaps: 0, writes }
             };
@@ -125,7 +125,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             arr[k] = leftArr[i];
             writes++;
             yield { 
-                snapshot: makeState({ k }, `Copying remaining left`), 
+                snapshot: makeState({ k }, `Copying remaining left`, 8), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [k] }],
                 metrics: { comparisons, swaps: 0, writes }
             };
@@ -135,7 +135,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             arr[k] = rightArr[j];
             writes++;
             yield { 
-                snapshot: makeState({ k }, `Copying remaining right`), 
+                snapshot: makeState({ k }, `Copying remaining right`, 8), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [k] }],
                 metrics: { comparisons, swaps: 0, writes }
             };
@@ -161,7 +161,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "TimSort Complete"), 
+        snapshot: makeState({}, "TimSort Complete", 4), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps: 0, writes } 
     };

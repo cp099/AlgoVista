@@ -31,13 +31,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
     let pos = 0;
-    yield { snapshot: makeState({ pos }, "Starting Gnome Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({ pos }, "Starting Gnome Sort", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     while (pos < n) {
         if (pos === 0) {
@@ -50,7 +50,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         } else {
             comparisons++;
             yield { 
-                snapshot: makeState({ pos }, `Comparing ${arr[pos]} vs ${arr[pos-1]}`), 
+                snapshot: makeState({ pos }, `Comparing ${arr[pos]} vs ${arr[pos-1]}`, 3), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [pos, pos-1] }],
                 metrics: { comparisons, swaps, writes: 0 }
             };
@@ -66,7 +66,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 const temp = arr[pos]; arr[pos] = arr[pos - 1]; arr[pos - 1] = temp;
                 swaps++;
                 yield { 
-                    snapshot: makeState({ pos }, `Swapping and stepping back`), 
+                    snapshot: makeState({ pos }, `Swapping and stepping back`, 6), 
                     events: [{ type: 'swap', targetIds: ['main'], indices: [pos, pos-1] }],
                     metrics: { comparisons, swaps, writes: 0 }
                 };
@@ -76,7 +76,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "Gnome Sort Complete"), 
+        snapshot: makeState({}, "Gnome Sort Complete", 2), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes: 0 } 
     };

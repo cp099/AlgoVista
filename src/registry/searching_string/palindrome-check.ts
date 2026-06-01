@@ -30,12 +30,12 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'text': { type: 'array', id: 'String', data: arr } },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, "Starting Palindrome Check"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting Palindrome Check", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     let l = 0;
     let r = n - 1;
@@ -43,7 +43,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     while (l < r) {
         comparisons++;
         yield { 
-            snapshot: makeState({ l, r, charL: arr[l], charR: arr[r] }, `Comparing ${arr[l]} vs ${arr[r]}`), 
+            snapshot: makeState({ l, r, charL: arr[l], charR: arr[r] }, `Comparing ${arr[l]} vs ${arr[r]}`, 2), 
             events: [
                 { type: 'compare', targetIds: ['String'], indices: [l] },
                 { type: 'compare', targetIds: ['String'], indices: [r] }
@@ -53,7 +53,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         if (arr[l] !== arr[r]) {
             yield { 
-                snapshot: makeState({ l, r }, `Mismatch found! Not a Palindrome.`), 
+                snapshot: makeState({ l, r }, `Mismatch found! Not a Palindrome.`, 3), 
                 events: [],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -65,7 +65,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "It is a Palindrome!"), 
+        snapshot: makeState({}, "It is a Palindrome!", 5), 
         events: [{ type: 'lock', targetIds: ['String'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

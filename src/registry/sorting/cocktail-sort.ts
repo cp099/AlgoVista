@@ -35,16 +35,16 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
     let swapped = true;
     let start = 0;
     let end = n - 1;
 
-    yield { snapshot: makeState({ start, end }, "Starting Cocktail Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({ start, end }, "Starting Cocktail Sort", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     while (swapped) {
         swapped = false;
@@ -53,7 +53,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let i = start; i < end; i++) {
             comparisons++;
             yield { 
-                snapshot: makeState({ i, start, end, direction: '-->' }, `Scanning Right: ${arr[i]} > ${arr[i+1]}?`), 
+                snapshot: makeState({ i, start, end, direction: '-->' }, `Scanning Right: ${arr[i]} > ${arr[i+1]}?`, 5), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i, i+1] }],
                 metrics: { comparisons, swaps, writes: 0 }
             };
@@ -63,7 +63,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 swaps++;
                 swapped = true;
                 yield { 
-                    snapshot: makeState({ i, start, end, direction: '-->' }, `Swapping ${arr[i]} and ${arr[i+1]}`), 
+                    snapshot: makeState({ i, start, end, direction: '-->' }, `Swapping ${arr[i]} and ${arr[i+1]}`, 6), 
                     events: [{ type: 'swap', targetIds: ['main'], indices: [i, i+1] }],
                     metrics: { comparisons, swaps, writes: 0 }
                 };
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         // Lock end element
         yield { 
-            snapshot: makeState({ start, end }, `Element ${arr[end]} is sorted`), 
+            snapshot: makeState({ start, end }, `Element ${arr[end]} is sorted`, 8), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [end] }],
             metrics: { comparisons, swaps, writes: 0 }
         };
@@ -85,7 +85,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let i = end - 1; i >= start; i--) {
             comparisons++;
             yield { 
-                snapshot: makeState({ i, start, end, direction: '<--' }, `Scanning Left: ${arr[i]} > ${arr[i+1]}?`), 
+                snapshot: makeState({ i, start, end, direction: '<--' }, `Scanning Left: ${arr[i]} > ${arr[i+1]}?`, 9), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i, i+1] }],
                 metrics: { comparisons, swaps, writes: 0 }
             };
@@ -95,7 +95,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 swaps++;
                 swapped = true;
                 yield { 
-                    snapshot: makeState({ i, start, end, direction: '<--' }, `Swapping ${arr[i]} and ${arr[i+1]}`), 
+                    snapshot: makeState({ i, start, end, direction: '<--' }, `Swapping ${arr[i]} and ${arr[i+1]}`, 6), 
                     events: [{ type: 'swap', targetIds: ['main'], indices: [i, i+1] }],
                     metrics: { comparisons, swaps, writes: 0 }
                 };
@@ -104,7 +104,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         // Lock start element
         yield { 
-            snapshot: makeState({ start, end }, `Element ${arr[start]} is sorted`), 
+            snapshot: makeState({ start, end }, `Element ${arr[start]} is sorted`, 8), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [start] }],
             metrics: { comparisons, swaps, writes: 0 }
         };
@@ -112,7 +112,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "Cocktail Sort Complete"), 
+        snapshot: makeState({}, "Cocktail Sort Complete", 3), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes: 0 } 
     };

@@ -44,13 +44,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     
     let comparisons = 0, writes = 0;
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'l1': { type: 'array', id: 'List 1', data: [...list1], visualMode: 'box' },
             'l2': { type: 'array', id: 'List 2', data: [...list2], visualMode: 'box' },
             'merged': { type: 'array', id: 'Merged List', data: [...merged], visualMode: 'box' }
         },
-        context: { variables: {}, message: msg }
+        context: { variables: {}, pseudocodeLine: line, message: msg }
     });
 
     yield { snapshot: makeState("Starting Merge"), events: [], metrics: { comparisons, swaps: 0, writes } };
@@ -93,7 +93,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         merged.push(val);
         writes++;
         yield { 
-            snapshot: makeState(`Appending remaining from List 1: ${val}`), 
+            snapshot: makeState(`Appending remaining from List 1: ${val}`, 5), 
             events: [{ type: 'write', targetIds: ['Merged List'], indices: [merged.length-1] }],
             metrics: { comparisons, swaps: 0, writes }
         };
@@ -103,7 +103,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         merged.push(val);
         writes++;
         yield { 
-            snapshot: makeState(`Appending remaining from List 2: ${val}`), 
+            snapshot: makeState(`Appending remaining from List 2: ${val}`, 5), 
             events: [{ type: 'write', targetIds: ['Merged List'], indices: [merged.length-1] }],
             metrics: { comparisons, swaps: 0, writes }
         };

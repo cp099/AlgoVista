@@ -31,16 +31,16 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { n, ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { n, ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, "Starting IntroSort..."), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting IntroSort...", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // --- INSERTION SORT HELPER ---
     function* insertionSort(low: number, high: number): Generator<any> {
-        yield { snapshot: makeState({ low, high, mode: 'Insertion' }, `Size < 4: Switching to Insertion Sort for [${low}..${high}]`), events: [], metrics: { comparisons, swaps, writes: 0 } };
+        yield { snapshot: makeState({ low, high, mode: 'Insertion' }, `Size < 4: Switching to Insertion Sort for [${low}..${high}]`, 3), events: [], metrics: { comparisons, swaps, writes: 0 } };
         
         for (let i = low + 1; i <= high; i++) {
             let key = arr[i];
@@ -50,14 +50,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 arr[j + 1] = arr[j];
                 j--;
                 yield { 
-                    snapshot: makeState({ i, j, mode: 'Insertion' }, `Insertion Shift`), 
+                    snapshot: makeState({ i, j, mode: 'Insertion' }, `Insertion Shift`, 3), 
                     events: [{ type: 'write', targetIds: ['main'], indices: [j+1] }],
                     metrics: { comparisons, swaps, writes: 0 } 
                 };
             }
             arr[j + 1] = key;
             yield { 
-                snapshot: makeState({ i, mode: 'Insertion' }, `Inserted ${key}`), 
+                snapshot: makeState({ i, mode: 'Insertion' }, `Inserted ${key}`, 3), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [j+1] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -77,7 +77,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const temp = arr[base + i]; arr[base + i] = arr[base + largest]; arr[base + largest] = temp;
             swaps++;
             yield { 
-                snapshot: makeState({ base, mode: 'Heap' }, `Heapify Swap`), 
+                snapshot: makeState({ base, mode: 'Heap' }, `Heapify Swap`, 4), 
                 events: [{ type: 'swap', targetIds: ['main'], indices: [base+i, base+largest] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -86,7 +86,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     function* heapSort(low: number, high: number): Generator<any> {
-        yield { snapshot: makeState({ low, high, mode: 'Heap' }, `Depth Limit Reached! Switching to Heap Sort for [${low}..${high}]`), events: [], metrics: { comparisons, swaps, writes: 0 } };
+        yield { snapshot: makeState({ low, high, mode: 'Heap' }, `Depth Limit Reached! Switching to Heap Sort for [${low}..${high}]`, 4), events: [], metrics: { comparisons, swaps, writes: 0 } };
         
         const n = high - low + 1;
         // Build Heap
@@ -98,7 +98,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const temp = arr[low]; arr[low] = arr[low + i]; arr[low + i] = temp;
             swaps++;
             yield { 
-                snapshot: makeState({ low, high, mode: 'Heap' }, `Heap Pop Max`), 
+                snapshot: makeState({ low, high, mode: 'Heap' }, `Heap Pop Max`, 4), 
                 events: [{ type: 'swap', targetIds: ['main'], indices: [low, low+i] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -114,7 +114,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let j = low; j < high; j++) {
             comparisons++;
             yield { 
-                snapshot: makeState({ low, high, pivot, mode: 'Quick' }, `QuickSort Partition: compare ${arr[j]} < ${pivot}`), 
+                snapshot: makeState({ low, high, pivot, mode: 'Quick' }, `QuickSort Partition: compare ${arr[j]} < ${pivot}`, 5), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [j, high] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -123,7 +123,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 const temp = arr[i]; arr[i] = arr[j]; arr[j] = temp;
                 swaps++;
                 yield { 
-                    snapshot: makeState({ i, j, mode: 'Quick' }, `Swap smaller element`), 
+                    snapshot: makeState({ i, j, mode: 'Quick' }, `Swap smaller element`, 5), 
                     events: [{ type: 'swap', targetIds: ['main'], indices: [i, j] }],
                     metrics: { comparisons, swaps, writes: 0 } 
                 };
@@ -132,7 +132,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const temp = arr[i + 1]; arr[i + 1] = arr[high]; arr[high] = temp;
         swaps++;
         yield { 
-            snapshot: makeState({ i, high, mode: 'Quick' }, `Place Pivot`), 
+            snapshot: makeState({ i, high, mode: 'Quick' }, `Place Pivot`, 5), 
             events: [{ type: 'swap', targetIds: ['main'], indices: [i+1, high] }],
             metrics: { comparisons, swaps, writes: 0 } 
         };
@@ -168,7 +168,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     yield* introSortRecursive(0, n - 1, depthLimit);
 
     yield { 
-        snapshot: makeState({}, "IntroSort Complete"), 
+        snapshot: makeState({}, "IntroSort Complete", 1), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes: 0 } 
     };

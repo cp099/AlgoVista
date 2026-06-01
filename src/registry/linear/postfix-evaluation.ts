@@ -37,7 +37,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     // Internal Stack
     const stack: number[] = [];
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'expr': { 
                 type: 'array', 
@@ -53,7 +53,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 visualMode: 'box' 
             }
         },
-        context: { variables: {}, pseudocodeLine: 0, message: msg }
+        context: { variables: {}, pseudocodeLine: line, message: msg }
     });
 
     yield { snapshot: makeState("Starting Evaluation"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
@@ -115,7 +115,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState(`Evaluation Complete. Result: ${stack[0]}`), 
+        snapshot: makeState(`Evaluation Complete. Result: ${stack[0]}`, 1), 
         events: [{ type: 'lock', targetIds: ['Evaluation Stack'], indices: [0] }],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

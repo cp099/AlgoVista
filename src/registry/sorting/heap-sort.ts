@@ -47,7 +47,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let comparisons = 0, swaps = 0;
 
     // Removed unused 'activeIndices' and 'sortedIndices'
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => {
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
 
@@ -71,11 +71,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             structures: { 
                 'main': { type: 'graph', id: 'main', nodes, edges, isDirected: true } 
             },
-            context: { variables: { n, ...vars }, pseudocodeLine: 0, message: msg }
+            context: { variables: { n, ...vars }, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState({ heapSize: n }, "Starting Heap Sort..."), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({ heapSize: n }, "Starting Heap Sort...", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     function* heapify(size: number, i: number): Generator<any> {
         let largest = i;
@@ -85,7 +85,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (left < size) {
             comparisons++;
             yield { 
-                snapshot: makeState({ heapSize: size, i, largest, left }, `Compare Parent ${arr[largest]} vs Left ${arr[left]}`),
+                snapshot: makeState({ heapSize: size, i, largest, left }, `Compare Parent ${arr[largest]} vs Left ${arr[left]}`, 3),
                 events: [{ type: 'compare', targetIds: ['main'], indices: [largest, left] }],
                 metrics: { comparisons, swaps, writes: 0 }
             };
@@ -106,7 +106,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const temp = arr[i]; arr[i] = arr[largest]; arr[largest] = temp;
             swaps++;
             yield { 
-                snapshot: makeState({ heapSize: size, i, largest }, `Swapping Parent with Child`),
+                snapshot: makeState({ heapSize: size, i, largest }, `Swapping Parent with Child`, 3),
                 events: [{ type: 'swap', targetIds: ['main'], indices: [i, largest] }],
                 metrics: { comparisons, swaps, writes: 0 }
             };
@@ -115,7 +115,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
-        yield { snapshot: makeState({ heapSize: n }, `Building Heap: Heapify index ${i}`), events: [], metrics: { comparisons, swaps, writes: 0 } };
+        yield { snapshot: makeState({ heapSize: n }, `Building Heap: Heapify index ${i}`, 2), events: [], metrics: { comparisons, swaps, writes: 0 } };
         yield* heapify(n, i);
     }
 
@@ -124,7 +124,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         swaps++;
         
         yield { 
-            snapshot: makeState({ heapSize: i }, `Extract Max: Move ${arr[i]} to sorted list`),
+            snapshot: makeState({ heapSize: i }, `Extract Max: Move ${arr[i]} to sorted list`, 5),
             events: [{ type: 'swap', targetIds: ['main'], indices: [0, i] }],
             metrics: { comparisons, swaps, writes: 0 }
         };
@@ -133,7 +133,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({ heapSize: 0 }, "Heap Sort Complete"), 
+        snapshot: makeState({ heapSize: 0 }, "Heap Sort Complete", 4), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }], 
         metrics: { comparisons, swaps, writes: 0 } 
     };

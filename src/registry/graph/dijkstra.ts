@@ -57,7 +57,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     // Priority Queue (simple array for visualization)
     let pq = nodes.map(n => parseInt(n.id));
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const labeledNodes = nodes.map(n => ({
             ...n,
             label: `${n.label}\n(${dist[parseInt(n.id)] === Infinity ? '∞' : dist[parseInt(n.id)]})`
@@ -73,13 +73,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                     visualMode: 'box' 
                 }
             },
-            context: { variables: {}, message: msg }
+            context: { variables: {}, pseudocodeLine: line, message: msg }
         };
     };
 
     // Initialization
     dist[startNode] = 0;
-    yield { snapshot: makeState(`Initialized. Start node ${nodes[startNode].label} distance = 0`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(`Initialized. Start node ${nodes[startNode].label} distance = 0`, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     while (pq.length > 0) {
         // Sort PQ to find min dist (real PQ is a heap, this is a visual sim)
@@ -87,7 +87,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const u = pq.shift()!; // Extract min
 
         yield { 
-            snapshot: makeState(`Visiting closest node: ${nodes[u].label}`),
+            snapshot: makeState(`Visiting closest node: ${nodes[u].label}`, 4),
             events: [{ type: 'visit', targetIds: ['main'], indices: [u] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 }
         };
@@ -100,7 +100,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (visited.has(v)) continue;
             
             yield {
-                snapshot: makeState(`Checking neighbor ${nodes[v].label}`),
+                snapshot: makeState(`Checking neighbor ${nodes[v].label}`, 7),
                 events: [{ type: 'compare', targetIds: ['main'], indices: [v] }],
                 metrics: { comparisons: 0, swaps: 0, writes: 0 }
             };
@@ -109,7 +109,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (alt < dist[v]) {
                 dist[v] = alt;
                  yield {
-                    snapshot: makeState(`Relaxing edge: New shorter path to ${nodes[v].label} found (${alt})`),
+                    snapshot: makeState(`Relaxing edge: New shorter path to ${nodes[v].label} found (${alt})`, 8),
                     events: [{ type: 'write', targetIds: ['main'], indices: [v] }],
                     metrics: { comparisons: 1, swaps: 0, writes: 1 }
                 };
@@ -117,7 +117,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    yield { snapshot: makeState("Dijkstra's Complete. All shortest paths found."), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Dijkstra's Complete. All shortest paths found.", 3), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

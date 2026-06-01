@@ -38,15 +38,15 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const k = (inputs['k'] as number) - 1;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { k: k+1, ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { k: k+1, ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, `Looking for ${k+1}-th smallest element`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, `Looking for ${k+1}-th smallest element`, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     if (k < 0 || k >= n) {
-        yield { snapshot: makeState({}, "Error: k is out of bounds"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+        yield { snapshot: makeState({}, "Error: k is out of bounds", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
         return;
     }
 
@@ -56,7 +56,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         let i = low - 1;
 
         yield { 
-            snapshot: makeState({ low, high, pivot }, `Partitioning range [${low}, ${high}] with Pivot ${pivot}`), 
+            snapshot: makeState({ low, high, pivot }, `Partitioning range [${low}, ${high}] with Pivot ${pivot}`, 3), 
             events: [{ type: 'visit', targetIds: ['main'], indices: [high] }],
             metrics: { comparisons, swaps, writes: 0 } 
         };
@@ -64,7 +64,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let j = low; j < high; j++) {
             comparisons++;
             yield { 
-                snapshot: makeState({ low, high, i, j }, `Comparing ${arr[j]} < ${pivot}?`), 
+                snapshot: makeState({ low, high, i, j }, `Comparing ${arr[j]} < ${pivot}?`, 3), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [j, high] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 const temp = arr[i]; arr[i] = arr[j]; arr[j] = temp;
                 swaps++;
                 yield { 
-                    snapshot: makeState({ low, high, i, j }, `Swapping smaller element`), 
+                    snapshot: makeState({ low, high, i, j }, `Swapping smaller element`, 3), 
                     events: [{ type: 'swap', targetIds: ['main'], indices: [i, j] }],
                     metrics: { comparisons, swaps, writes: 0 } 
                 };
@@ -85,7 +85,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         
         const pi = i + 1;
         yield { 
-            snapshot: makeState({ pi }, `Pivot placed at index ${pi}`), 
+            snapshot: makeState({ pi }, `Pivot placed at index ${pi}`, 3), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [pi] }],
             metrics: { comparisons, swaps, writes: 0 } 
         };
@@ -107,7 +107,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         if (pivotIndex === k) {
             yield { 
-                snapshot: makeState({ result: arr[pivotIndex] }, `Found k-th smallest: ${arr[pivotIndex]}`), 
+                snapshot: makeState({ result: arr[pivotIndex] }, `Found k-th smallest: ${arr[pivotIndex]}`, 4), 
                 events: [{ type: 'lock', targetIds: ['main'], indices: [pivotIndex] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -115,14 +115,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         } else if (pivotIndex < k) {
             left = pivotIndex + 1;
             yield { 
-                snapshot: makeState({ left, right }, `Pivot (${pivotIndex}) < k (${k}). Search Right.`), 
+                snapshot: makeState({ left, right }, `Pivot (${pivotIndex}) < k (${k}). Search Right.`, 6), 
                 events: [], 
                 metrics: { comparisons, swaps, writes: 0 } 
             };
         } else {
             right = pivotIndex - 1;
             yield { 
-                snapshot: makeState({ left, right }, `Pivot (${pivotIndex}) > k (${k}). Search Left.`), 
+                snapshot: makeState({ left, right }, `Pivot (${pivotIndex}) > k (${k}). Search Left.`, 5), 
                 events: [], 
                 metrics: { comparisons, swaps, writes: 0 } 
             };

@@ -43,15 +43,15 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars, target }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars, target }, pseudocodeLine: line, message: msg }
     });
 
     let lo = 0;
     let hi = n - 1;
 
-    yield { snapshot: makeState({ lo, hi }, "Starting Interpolation Search"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({ lo, hi }, "Starting Interpolation Search", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     while (lo <= hi && target >= arr[lo] && target <= arr[hi]) {
         if (lo === hi) {
@@ -72,7 +72,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         
         comparisons++;
         yield { 
-            snapshot: makeState({ lo, hi, pos }, `Estimated position: ${pos} (Value: ${arr[pos]})`), 
+            snapshot: makeState({ lo, hi, pos }, `Estimated position: ${pos} (Value: ${arr[pos]})`, 6), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [pos] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
@@ -104,7 +104,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({ result: -1 }, "Target not found"), 
+        snapshot: makeState({ result: -1 }, "Target not found", 10), 
         events: [], 
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

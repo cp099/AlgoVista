@@ -59,7 +59,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     let pq = nodes.map(n => parseInt(n.id));
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const labeledNodes = nodes.map(n => ({
             ...n,
             label: `${n.label}\n(k=${key[parseInt(n.id)] === Infinity ? '∞' : key[parseInt(n.id)]})`
@@ -79,20 +79,20 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 'main': { type: 'graph', id: 'Graph', nodes: labeledNodes, edges: displayEdges as any, isDirected: false },
                 'pq': { type: 'array', id: 'PQ (by key)', data: [...pq.map(id => `${nodes[id].label}: ${key[id] === Infinity ? '∞' : key[id]}`)], visualMode: 'box' }
             },
-            context: { variables: {}, message: msg }
+            context: { variables: {}, pseudocodeLine: line, message: msg }
         };
     };
 
     // Initialization
     key[startNode] = 0;
-    yield { snapshot: makeState(`Initialized. Start node ${nodes[startNode].label} key = 0`), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState(`Initialized. Start node ${nodes[startNode].label} key = 0`, 1), events: [], metrics: { comparisons, swaps, writes } };
 
     while (pq.length > 0) {
         pq.sort((a, b) => key[a] - key[b]);
         const u = pq.shift()!;
 
         yield { 
-            snapshot: makeState(`Extract Min: ${nodes[u].label}`),
+            snapshot: makeState(`Extract Min: ${nodes[u].label}`, 4),
             events: [{ type: 'visit', targetIds: ['main'], indices: [u] }],
             metrics: { comparisons, swaps, writes }
         };
@@ -110,7 +110,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (!inMST[v]) {
                 comparisons++;
                 yield {
-                    snapshot: makeState(`Checking neighbor ${nodes[v].label}`),
+                    snapshot: makeState(`Checking neighbor ${nodes[v].label}`, 7),
                     events: [{ type: 'compare', targetIds: ['main'], indices: [v] }],
                     metrics: { comparisons, swaps, writes }
                 };
@@ -120,7 +120,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                     key[v] = edge.weight;
                     writes++;
                      yield {
-                        snapshot: makeState(`Updating key for ${nodes[v].label} to ${key[v]}`),
+                        snapshot: makeState(`Updating key for ${nodes[v].label} to ${key[v]}`, 8),
                         events: [{ type: 'write', targetIds: ['main'], indices: [v] }],
                         metrics: { comparisons, swaps, writes }
                     };
@@ -129,7 +129,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    yield { snapshot: makeState("Prim's Complete. MST Found."), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("Prim's Complete. MST Found.", 3), events: [], metrics: { comparisons, swaps, writes } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

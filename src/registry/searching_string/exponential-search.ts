@@ -36,16 +36,16 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars, target }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars, target }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, "Starting Exponential Search"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting Exponential Search", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     if (arr[0] === target) {
         yield { 
-            snapshot: makeState({ result: 0 }, "Found at index 0"), 
+            snapshot: makeState({ result: 0 }, "Found at index 0", 1), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [0] }],
             metrics: { comparisons: 1, swaps: 0, writes: 0 } 
         };
@@ -56,14 +56,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     while (i < n && arr[i] <= target) {
         comparisons++;
         yield { 
-            snapshot: makeState({ i, val: arr[i] }, `Checking index ${i} (${arr[i]}) <= ${target}`), 
+            snapshot: makeState({ i, val: arr[i] }, `Checking index ${i} (${arr[i]}) <= ${target}`, 3), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [i] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
         
         if (arr[i] === target) {
              yield { 
-                snapshot: makeState({ i, result: i }, `Found target at ${i}`), 
+                snapshot: makeState({ i, result: i }, `Found target at ${i}`, 3), 
                 events: [{ type: 'lock', targetIds: ['main'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -78,7 +78,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let right = Math.min(i, n - 1);
 
     yield { 
-        snapshot: makeState({ left, right }, `Target is in range [${left}, ${right}]. Switching to Binary Search.`), 
+        snapshot: makeState({ left, right }, `Target is in range [${left}, ${right}]. Switching to Binary Search.`, 5), 
         events: [],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };
@@ -88,14 +88,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         comparisons++;
 
         yield { 
-            snapshot: makeState({ left, right, mid }, `Binary Search: Checking ${arr[mid]}`), 
+            snapshot: makeState({ left, right, mid }, `Binary Search: Checking ${arr[mid]}`, 5), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [mid] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
 
         if (arr[mid] === target) {
             yield { 
-                snapshot: makeState({ mid, result: mid }, `Found target at index ${mid}`), 
+                snapshot: makeState({ mid, result: mid }, `Found target at index ${mid}`, 3), 
                 events: [{ type: 'lock', targetIds: ['main'], indices: [mid] }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -107,7 +107,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({ result: -1 }, "Target not found"), 
+        snapshot: makeState({ result: -1 }, "Target not found", 5), 
         events: [], 
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

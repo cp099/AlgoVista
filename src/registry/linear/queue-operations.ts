@@ -36,7 +36,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const queueData: number[] = [];
     const capacity = 8; 
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         return {
             structures: { 
                 'main': { 
@@ -53,19 +53,19 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                     size: queueData.length,
                     capacity 
                 }, 
-                pseudocodeLine: 0, 
+                pseudocodeLine: line, 
                 message: msg 
             }
         };
     };
 
-    yield { snapshot: makeState("Queue Initialized (Empty)"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Queue Initialized (Empty)", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. ENQUEUE PHASE
     for (const val of sequence) {
         if (queueData.length >= capacity) {
             yield { 
-                snapshot: makeState("Queue Overflow! Cannot enqueue."), 
+                snapshot: makeState("Queue Overflow! Cannot enqueue.", 2), 
                 events: [],
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         // Prepare
         yield { 
-            snapshot: makeState(`Preparing to Enqueue ${val}...`), 
+            snapshot: makeState(`Preparing to Enqueue ${val}...`, 3), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -84,7 +84,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const rearIdx = queueData.length - 1;
 
         yield { 
-            snapshot: makeState(`Enqueued ${val} at Rear [Index ${rearIdx}]`), 
+            snapshot: makeState(`Enqueued ${val} at Rear [Index ${rearIdx}]`, 4), 
             events: [{ type: 'write', targetIds: ['main'], indices: [rearIdx] }], // Green/Purple flash
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
@@ -93,7 +93,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     // 2. PEEK FRONT
     if (queueData.length > 0) {
         yield { 
-            snapshot: makeState(`Peeking Front Element: ${queueData[0]}`), 
+            snapshot: makeState(`Peeking Front Element: ${queueData[0]}`, 6), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [0] }], // Yellow flash
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -104,7 +104,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const val = queueData[0];
 
         yield { 
-            snapshot: makeState(`Dequeueing Front Element (${val})...`), 
+            snapshot: makeState(`Dequeueing Front Element (${val})...`, 8), 
             events: [{ type: 'visit', targetIds: ['main'], indices: [0] }], // Red/Purple flash
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -113,7 +113,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         queueData.shift();
 
         yield { 
-            snapshot: makeState(`Dequeued ${val}. Elements shifted left.`), 
+            snapshot: makeState(`Dequeued ${val}. Elements shifted left.`, 9), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
@@ -121,13 +121,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     // 4. UNDERFLOW CHECK
     yield { 
-        snapshot: makeState("Queue is Empty. Attempting Dequeue..."), 
+        snapshot: makeState("Queue is Empty. Attempting Dequeue...", 8), 
         events: [],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };
 
     yield { 
-        snapshot: makeState("Queue Underflow Error!"), 
+        snapshot: makeState("Queue Underflow Error!", 7), 
         events: [],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

@@ -31,9 +31,9 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { n, ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { n, ...vars }, pseudocodeLine: line, message: msg }
     });
 
     // Helper to reverse array from 0 to k
@@ -41,7 +41,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (k < 1) return;
         
         yield { 
-            snapshot: makeState({ k }, `Flipping first ${k+1} pancakes`), 
+            snapshot: makeState({ k }, `Flipping first ${k+1} pancakes`, 1), 
             events: [{ type: 'write', targetIds: ['main'], indices: Array.from({length: k+1}, (_, i) => i) }], // Highlight range
             metrics: { comparisons, swaps, writes: 0 } 
         };
@@ -58,13 +58,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
 
         yield { 
-            snapshot: makeState({ k }, `Flipped`), 
+            snapshot: makeState({ k }, `Flipped`, 1), 
             events: [],
             metrics: { comparisons, swaps, writes: 0 } 
         };
     }
 
-    yield { snapshot: makeState({}, "Starting Pancake Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting Pancake Sort", 2), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     for (let currSize = n; currSize > 1; currSize--) {
         // Find max element in arr[0..currSize-1]
@@ -72,7 +72,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let i = 0; i < currSize; i++) {
             comparisons++;
             yield { 
-                snapshot: makeState({ currSize, i, maxIdx }, `Finding max in unsorted range`), 
+                snapshot: makeState({ currSize, i, maxIdx }, `Finding max in unsorted range`, 3), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i, maxIdx] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -85,7 +85,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             // 1. Move max to beginning (Flip 0..maxIdx)
             if (maxIdx > 0) {
                 yield { 
-                    snapshot: makeState({ currSize, maxIdx }, `Max (${arr[maxIdx]}) found at ${maxIdx}. Flipping to top.`), 
+                    snapshot: makeState({ currSize, maxIdx }, `Max (${arr[maxIdx]}) found at ${maxIdx}. Flipping to top.`, 6), 
                     events: [],
                     metrics: { comparisons, swaps, writes: 0 } 
                 };
@@ -94,7 +94,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
             // 2. Move max to end (Flip 0..currSize-1)
             yield { 
-                snapshot: makeState({ currSize }, `Flipping top element to position ${currSize-1}`), 
+                snapshot: makeState({ currSize }, `Flipping top element to position ${currSize-1}`, 7), 
                 events: [],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -103,14 +103,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         // Lock sorted position
         yield { 
-            snapshot: makeState({ currSize }, `${arr[currSize-1]} is sorted`), 
+            snapshot: makeState({ currSize }, `${arr[currSize-1]} is sorted`, 2), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [currSize - 1] }],
             metrics: { comparisons, swaps, writes: 0 } 
         };
     }
 
     yield { 
-        snapshot: makeState({}, "Pancake Sort Complete"), 
+        snapshot: makeState({}, "Pancake Sort Complete", 2), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes: 0 } 
     };

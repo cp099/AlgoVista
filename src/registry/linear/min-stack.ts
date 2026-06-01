@@ -39,7 +39,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const mainStack: number[] = [];
     const minStack: number[] = [];
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'main': { 
                 type: 'array', 
@@ -56,15 +56,15 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 visualMode: 'box' 
             }
         },
-        context: { variables: { currentMin: minStack[minStack.length-1] ?? 'None' }, pseudocodeLine: 0, message: msg }
+        context: { variables: { currentMin: minStack[minStack.length-1] ?? 'None' }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Min Stack"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Min Stack", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. PUSH PHASE
     for (const val of sequence) {
         yield { 
-            snapshot: makeState(`Pushing ${val}...`), 
+            snapshot: makeState(`Pushing ${val}...`, 2), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -92,14 +92,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             snapshot: makeState(
                 pushedToMin 
                 ? `Pushed ${val} to Main. ${val} <= ${currentMin}, so push to Min Stack too.` 
-                : `Pushed ${val} to Main. ${val} > ${currentMin}, Min Stack unchanged.`
+                : `Pushed ${val} to Main. ${val} > ${currentMin}, Min Stack unchanged.`, 3
             ), 
             events, // Use the pre-built array
             metrics: { comparisons: 1, swaps: 0, writes: pushedToMin ? 2 : 1 } 
         };
     }
 
-    yield { snapshot: makeState("Push Phase Complete. Now Popping..."), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Push Phase Complete. Now Popping...", 5), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 2. POP PHASE
     while (mainStack.length > 0) {
@@ -107,7 +107,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const currentMin = minStack[minStack.length - 1];
 
         yield { 
-            snapshot: makeState(`Popping Top (${top}). Current Min is ${currentMin}`), 
+            snapshot: makeState(`Popping Top (${top}). Current Min is ${currentMin}`, 6), 
             events: [{ type: 'visit', targetIds: ['Main Stack'], indices: [mainStack.length-1] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -124,7 +124,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             snapshot: makeState(
                 poppedMin 
                 ? `Popped ${top}. It was the Min, so pop Min Stack too!` 
-                : `Popped ${top}. Not the Min, so Min Stack stays.`
+                : `Popped ${top}. Not the Min, so Min Stack stays.`, 8
             ), 
             events: poppedMin ? [{ type: 'visit', targetIds: ['Auxiliary Min Stack'], indices: [minStack.length] }] : [],
             metrics: { comparisons: 1, swaps: 0, writes: poppedMin ? 2 : 1 } 
@@ -132,7 +132,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Min Stack Demo Complete"), 
+        snapshot: makeState("Min Stack Demo Complete", 1), 
         events: [],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

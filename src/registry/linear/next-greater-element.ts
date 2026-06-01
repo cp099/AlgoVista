@@ -36,7 +36,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     let comparisons = 0, writes = 0;
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'input': { 
                 type: 'array', 
@@ -58,10 +58,10 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 visualMode: 'box'
             }
         },
-        context: { variables: {}, message: msg }
+        context: { variables: {}, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Initialized"), events: [], metrics: { comparisons, swaps: 0, writes } };
+    yield { snapshot: makeState("Initialized", 1), events: [], metrics: { comparisons, swaps: 0, writes } };
 
     for (let i = 0; i < n; i++) {
         yield { 
@@ -75,7 +75,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const topIndex = stack[stack.length - 1];
             
             yield { 
-                snapshot: makeState(`Stack Top arr[${topIndex}]=${arr[topIndex]} < arr[${i}]=${arr[i]}. Pop and set result.`), 
+                snapshot: makeState(`Stack Top arr[${topIndex}]=${arr[topIndex]} < arr[${i}]=${arr[i]}. Pop and set result.`, 4), 
                 events: [
                     { type: 'compare', targetIds: ['Input'], indices: [topIndex, i] },
                     { type: 'visit', targetIds: ['Index Stack'], indices: [stack.length - 1] }
@@ -99,7 +99,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             comparisons++;
             const topIndex = stack[stack.length - 1];
              yield { 
-                snapshot: makeState(`Stack Top arr[${topIndex}]=${arr[topIndex]} >= arr[${i}]=${arr[i]}. Pushing index ${i}.`), 
+                snapshot: makeState(`Stack Top arr[${topIndex}]=${arr[topIndex]} >= arr[${i}]=${arr[i]}. Pushing index ${i}.`, 4), 
                 events: [{ type: 'compare', targetIds: ['Input'], indices: [topIndex, i] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -107,7 +107,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         stack.push(i);
         yield { 
-            snapshot: makeState(`Pushing index ${i} to stack`), 
+            snapshot: makeState(`Pushing index ${i} to stack`, 6), 
             events: [{ type: 'write', targetIds: ['Index Stack'], indices: [stack.length-1] }],
             metrics: { comparisons, swaps: 0, writes } 
         };

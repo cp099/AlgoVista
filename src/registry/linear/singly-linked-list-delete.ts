@@ -37,7 +37,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     
     let head: LLNode | null = null;
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         
@@ -59,7 +59,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         
         return {
             structures: { 'main': { type: 'graph', id: 'Linked List', nodes, edges, isDirected: true } },
-            context: { variables: { head: head?.val ?? 'null' }, message: msg }
+            context: { variables: { head: head?.val ?? 'null' }, pseudocodeLine: line, message: msg }
         };
     };
 
@@ -96,7 +96,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     // 3. Delete Head
     valToDelete = head!.val;
-    yield { snapshot: makeState(`Deleting Head: ${valToDelete}`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(`Deleting Head: ${valToDelete}`, 3), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
     if (head) head = head.next;
     yield { snapshot: makeState(`Deleted ${valToDelete}`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 

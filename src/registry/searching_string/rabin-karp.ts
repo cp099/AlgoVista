@@ -49,31 +49,31 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const patHash = getHash(patArr);
     let textHash = getHash(textArr.slice(0, m));
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'text': { type: 'array', id: 'Text', data: textArr },
             'pat': { type: 'array', id: 'Pattern', data: patArr }
         },
         context: { 
             variables: { ...vars, patHash, textHash }, 
-            pseudocodeLine: 0, 
+            pseudocodeLine: line, 
             message: msg 
         }
     });
 
-    yield { snapshot: makeState(`Initial Hashes: P=${patHash}, T=${textHash}`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(`Initial Hashes: P=${patHash}, T=${textHash}`, 2), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     for (let i = 0; i <= n - m; i++) {
         comparisons++; // Hash compare
         yield { 
-            snapshot: makeState(`Comparing Hash: ${textHash} vs ${patHash}`, { i, textHash }), 
+            snapshot: makeState(`Comparing Hash: ${textHash} vs ${patHash}`, { i, textHash }, 3), 
             events: [{ type: 'visit', targetIds: ['Text'], indices: Array.from({length:m},(_,k)=>i+k) }], // Highlight window
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
 
         if (textHash === patHash) {
             yield { 
-                snapshot: makeState(`Hash Match! Checking characters...`, { i }), 
+                snapshot: makeState(`Hash Match! Checking characters...`, { i }, 4), 
                 events: [],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -82,7 +82,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             for (j = 0; j < m; j++) {
                 comparisons++;
                 yield { 
-                    snapshot: makeState(`Verifying T[${i+j}] vs P[${j}]`, { i, j }), 
+                    snapshot: makeState(`Verifying T[${i+j}] vs P[${j}]`, { i, j }, 5), 
                     events: [
                         { type: 'compare', targetIds: ['Text'], indices: [i+j] },
                         { type: 'compare', targetIds: ['Pattern'], indices: [j] }
@@ -97,7 +97,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
             if (j === m) {
                 yield { 
-                    snapshot: makeState(`Pattern Found at index ${i}!`, { i, result: i }), 
+                    snapshot: makeState(`Pattern Found at index ${i}!`, { i, result: i }, 5), 
                     events: [{ type: 'lock', targetIds: ['Text'], indices: Array.from({length: m}, (_, k) => i + k) }],
                     metrics: { comparisons, swaps: 0, writes: 0 } 
                 };
@@ -112,7 +112,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             textHash = textHash - oldChar + newChar;
             
             yield { 
-                snapshot: makeState(`Rolling Hash: -${textArr[i]} +${textArr[i+m]} = ${textHash}`, { i, textHash }), 
+                snapshot: makeState(`Rolling Hash: -${textArr[i]} +${textArr[i+m]} = ${textHash}`, { i, textHash }, 7), 
                 events: [], // Could highlight the entering/leaving chars if we want
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -120,7 +120,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Search Complete. Pattern not found."), 
+        snapshot: makeState("Search Complete. Pattern not found.", {}, 3), 
         events: [],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

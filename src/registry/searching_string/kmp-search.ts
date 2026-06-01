@@ -46,16 +46,16 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     // We start with empty LPS array visually
     const lps = new Array(m).fill(0);
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'text': { type: 'array', id: 'Text', data: textArr },
             'pat': { type: 'array', id: 'Pattern', data: patArr },
             'lps': { type: 'array', id: 'LPS Table', data: [...lps] }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting KMP: Computing LPS Array..."), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting KMP: Computing LPS Array...", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. COMPUTE LPS
     let len = 0;
@@ -65,7 +65,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     while (i < m) {
         comparisons++;
         yield { 
-            snapshot: makeState(`LPS: Comparing P[${i}](${patArr[i]}) vs P[${len}](${patArr[len]})`, { i, len }), 
+            snapshot: makeState(`LPS: Comparing P[${i}](${patArr[i]}) vs P[${len}](${patArr[len]})`, { i, len }, 1), 
             events: [{ type: 'compare', targetIds: ['Pattern'], indices: [i, len] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             len++;
             lps[i] = len;
             yield { 
-                snapshot: makeState(`Match! LPS[${i}] = ${len}`, { i, len }), 
+                snapshot: makeState(`Match! LPS[${i}] = ${len}`, { i, len }, 1), 
                 events: [{ type: 'write', targetIds: ['LPS Table'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -83,14 +83,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (len !== 0) {
                 len = lps[len - 1];
                 yield { 
-                    snapshot: makeState(`Mismatch! Fallback len to ${len}`, { i, len }), 
+                    snapshot: makeState(`Mismatch! Fallback len to ${len}`, { i, len }, 1), 
                     events: [],
                     metrics: { comparisons, swaps: 0, writes: 0 } 
                 };
             } else {
                 lps[i] = 0;
                 yield { 
-                    snapshot: makeState(`LPS[${i}] = 0`, { i }), 
+                    snapshot: makeState(`LPS[${i}] = 0`, { i }, 1), 
                     events: [{ type: 'write', targetIds: ['LPS Table'], indices: [i] }],
                     metrics: { comparisons, swaps: 0, writes: 0 } 
                 };
@@ -99,7 +99,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    yield { snapshot: makeState("LPS Computed. Starting Search."), events: [], metrics: { comparisons, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("LPS Computed. Starting Search.", {}, 2), events: [], metrics: { comparisons, swaps: 0, writes: 0 } };
 
     // 2. KMP SEARCH
     let j = 0; // index for pat[]
@@ -108,7 +108,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     while (i < n) {
         comparisons++;
         yield { 
-            snapshot: makeState(`Comparing T[${i}] vs P[${j}]`, { i, j }), 
+            snapshot: makeState(`Comparing T[${i}] vs P[${j}]`, { i, j }, 4), 
             events: [
                 { type: 'compare', targetIds: ['Text'], indices: [i] },
                 { type: 'compare', targetIds: ['Pattern'], indices: [j] }
@@ -123,7 +123,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         if (j === m) {
             yield { 
-                snapshot: makeState(`Pattern Found at index ${i - j}!`, { result: i - j }), 
+                snapshot: makeState(`Pattern Found at index ${i - j}!`, { result: i - j }, 6), 
                 events: [{ type: 'lock', targetIds: ['Text'], indices: Array.from({length: m}, (_, k) => i - j + k) }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -131,7 +131,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         } else if (i < n && patArr[j] !== textArr[i]) {
             if (j !== 0) {
                 yield { 
-                    snapshot: makeState(`Mismatch! Jumps j to ${lps[j-1]} using LPS`, { i, j }), 
+                    snapshot: makeState(`Mismatch! Jumps j to ${lps[j-1]} using LPS`, { i, j }, 8), 
                     events: [{ type: 'visit', targetIds: ['LPS Table'], indices: [j-1] }],
                     metrics: { comparisons, swaps: 0, writes: 0 } 
                 };
@@ -143,7 +143,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Search Complete"), 
+        snapshot: makeState("Search Complete", {}, 3), 
         events: [],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

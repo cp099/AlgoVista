@@ -35,16 +35,16 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const stack: string[] = [];
     const output: string[] = [];
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'expr': { type: 'array', id: 'Input Expression', data: [...arr], visualMode: 'box' },
             'stack': { type: 'array', id: 'Operator Stack', data: [...stack], orientation: 'vertical', visualMode: 'box' },
             'out': { type: 'array', id: 'Postfix Output', data: [...output], visualMode: 'box' }
         },
-        context: { variables: {}, pseudocodeLine: 0, message: msg }
+        context: { variables: {}, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Conversion"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Conversion", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     const precedence = (op: string) => {
         if (op === '^') return 3;
@@ -67,7 +67,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (isOperand(char)) {
             output.push(char);
             yield { 
-                snapshot: makeState(`'${char}' is operand -> Output`), 
+                snapshot: makeState(`'${char}' is operand -> Output`, 3), 
                 events: [{ type: 'write', targetIds: ['Postfix Output'], indices: [output.length-1] }],
                 metrics: { comparisons: 0, swaps: 0, writes: 1 } 
             };
@@ -75,20 +75,20 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         else if (char === '(') {
             stack.push(char);
             yield { 
-                snapshot: makeState(`'(' -> Push to Stack`), 
+                snapshot: makeState(`'(' -> Push to Stack`, 4), 
                 events: [{ type: 'write', targetIds: ['Operator Stack'], indices: [stack.length-1] }],
                 metrics: { comparisons: 0, swaps: 0, writes: 1 } 
             };
         } 
         else if (char === ')') {
-            yield { snapshot: makeState(`')' -> Pop until '('`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+            yield { snapshot: makeState(`', 5)' -> Pop until '('`, 5), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
             
             while (stack.length > 0 && stack[stack.length - 1] !== '(') {
                 const op = stack.pop()!;
                 output.push(op);
                 
                 yield { 
-                    snapshot: makeState(`Popped '${op}' -> Output`), 
+                    snapshot: makeState(`Popped '${op}' -> Output`, 5), 
                     events: [
                         { type: 'visit', targetIds: ['Operator Stack'], indices: [stack.length] }, // Visual pop
                         { type: 'write', targetIds: ['Postfix Output'], indices: [output.length-1] }
@@ -99,7 +99,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (stack.length > 0) {
                 stack.pop(); // Pop '('
                 yield { 
-                    snapshot: makeState(`Discarding '('`), 
+                    snapshot: makeState(`Discarding '('`, 5), 
                     events: [],
                     metrics: { comparisons: 0, swaps: 0, writes: 0 } 
                 };
@@ -115,7 +115,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 output.push(op);
                 
                 yield { 
-                    snapshot: makeState(`Stack Top '${op}' >= '${char}' -> Pop & Output`), 
+                    snapshot: makeState(`Stack Top '${op}' >= '${char}' -> Pop & Output`, 7), 
                     events: [
                         { type: 'visit', targetIds: ['Operator Stack'], indices: [stack.length] },
                         { type: 'write', targetIds: ['Postfix Output'], indices: [output.length-1] }
@@ -125,7 +125,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             }
             stack.push(char);
             yield { 
-                snapshot: makeState(`Push '${char}' to Stack`), 
+                snapshot: makeState(`Push '${char}' to Stack`, 8), 
                 events: [{ type: 'write', targetIds: ['Operator Stack'], indices: [stack.length-1] }],
                 metrics: { comparisons: 1, swaps: 0, writes: 1 } 
             };
@@ -137,7 +137,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const op = stack.pop()!;
         output.push(op);
         yield { 
-            snapshot: makeState(`End of Expression. Pop '${op}'`), 
+            snapshot: makeState(`End of Expression. Pop '${op}'`, 9), 
             events: [
                 { type: 'visit', targetIds: ['Operator Stack'], indices: [stack.length] },
                 { type: 'write', targetIds: ['Postfix Output'], indices: [output.length-1] }
@@ -147,7 +147,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Conversion Complete"), 
+        snapshot: makeState("Conversion Complete", 1), 
         events: [{ type: 'lock', targetIds: ['Postfix Output'], indices: Array.from({length:output.length},(_,k)=>k) }],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

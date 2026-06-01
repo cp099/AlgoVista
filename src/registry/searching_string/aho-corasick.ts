@@ -56,14 +56,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const root = new TrieNode("root", "root", 400, 50);
     nodes.push({ id: root.id, val: 0, label: "ROOT", x: root.x, y: root.y });
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'trie': { type: 'graph', id: 'Aho-Corasick Trie', nodes: [...nodes], edges: [...edges], isDirected: true }
         },
-        context: { variables: {}, pseudocodeLine: 0, message: msg }
+        context: { variables: {}, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Trie Construction"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Trie Construction", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. INSERT PATTERNS
     let nodeIdCounter = 1;
@@ -72,7 +72,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         let curr = root;
         let depth = 0;
 
-        yield { snapshot: makeState(`Inserting pattern "${pat}"`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+        yield { snapshot: makeState(`Inserting pattern "${pat}"`, 2), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
         for (const char of pat) {
             depth++;
@@ -87,7 +87,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 edges.push({ source: curr.id, target: newNode.id });
                 
                 yield { 
-                    snapshot: makeState(`Adding node '${char}'`), 
+                    snapshot: makeState(`Adding node '${char}'`, 2), 
                     events: [{ type: 'write', targetIds: ['Aho-Corasick Trie'], indices: [parseInt(newNode.id.slice(1)) || 0] }], 
                     metrics: { comparisons: 0, swaps: 0, writes: 0 } 
                 };
@@ -96,13 +96,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
         curr.isWord = true;
         yield { 
-            snapshot: makeState(`Marked '${pat}' end`), 
+            snapshot: makeState(`Marked '${pat}' end`, 2), 
             events: [{ type: 'lock', targetIds: ['Aho-Corasick Trie'], indices: [parseInt(curr.id.slice(1)) || 0] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
     }
 
-    yield { snapshot: makeState("Trie Construction Complete"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Trie Construction Complete", 5), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

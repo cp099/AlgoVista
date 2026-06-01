@@ -30,12 +30,12 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { n, ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { n, ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, "Starting Bitonic Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting Bitonic Sort", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // Pad array to power of 2 if necessary (internal logic doesn't require visual padding, 
     // but algorithm works strictly on power of 2 lengths ideally. We'll implement arbitrary n logic or stick to power of 2 assumption).
@@ -49,7 +49,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 const dirStr = dir ? 'Ascending' : 'Descending';
                 
                 yield { 
-                    snapshot: makeState({ low, cnt, i, j: i+k, dir: dirStr }, `Comparing ${arr[i]} vs ${arr[i+k]}`), 
+                    snapshot: makeState({ low, cnt, i, j: i+k, dir: dirStr }, `Comparing ${arr[i]} vs ${arr[i+k]}`, 6), 
                     events: [{ type: 'compare', targetIds: ['main'], indices: [i, i+k] }],
                     metrics: { comparisons, swaps, writes: 0 } 
                 };
@@ -58,7 +58,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                     const temp = arr[i]; arr[i] = arr[i + k]; arr[i + k] = temp;
                     swaps++;
                     yield { 
-                        snapshot: makeState({ low, cnt, i, j: i+k, dir: dirStr }, `Swapping to match direction`), 
+                        snapshot: makeState({ low, cnt, i, j: i+k, dir: dirStr }, `Swapping to match direction`, 6), 
                         events: [{ type: 'swap', targetIds: ['main'], indices: [i, i+k] }],
                         metrics: { comparisons, swaps, writes: 0 } 
                     };
@@ -87,7 +87,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     yield* bitonicSort(0, n, true); // Sort entire array in ascending order (1 = true)
 
     yield { 
-        snapshot: makeState({}, "Bitonic Sort Complete"), 
+        snapshot: makeState({}, "Bitonic Sort Complete", 1), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes: 0 } 
     };

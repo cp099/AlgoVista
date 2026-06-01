@@ -39,25 +39,25 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let dist = 0;
     let comparisons = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             's1': { type: 'array', id: 'String 1', data: arr1 },
             's2': { type: 'array', id: 'String 2', data: arr2 }
         },
-        context: { variables: { ...vars, dist }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars, dist }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Hamming Distance"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Hamming Distance", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     if (s1.length !== s2.length) {
-        yield { snapshot: makeState("Error: Lengths must be equal"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+        yield { snapshot: makeState("Error: Lengths must be equal", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
         return;
     }
 
     for (let i = 0; i < s1.length; i++) {
         comparisons++;
         yield { 
-            snapshot: makeState(`Comparing index ${i}: ${arr1[i]} vs ${arr2[i]}`, { i }), 
+            snapshot: makeState(`Comparing index ${i}: ${arr1[i]} vs ${arr2[i]}`, { i }, 3), 
             events: [
                 { type: 'compare', targetIds: ['String 1'], indices: [i] },
                 { type: 'compare', targetIds: ['String 2'], indices: [i] }
@@ -68,7 +68,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (arr1[i] !== arr2[i]) {
             dist++;
             yield { 
-                snapshot: makeState(`Mismatch! Distance incremented to ${dist}`, { i }), 
+                snapshot: makeState(`Mismatch! Distance incremented to ${dist}`, { i }, 4), 
                 events: [
                     { type: 'write', targetIds: ['String 1'], indices: [i] }, // Using write to show "change/diff" color (Purple)
                     { type: 'write', targetIds: ['String 2'], indices: [i] }
@@ -77,7 +77,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             };
         } else {
             yield { 
-                snapshot: makeState(`Match. Distance remains ${dist}`, { i }), 
+                snapshot: makeState(`Match. Distance remains ${dist}`, { i }, 3), 
                 events: [
                     { type: 'lock', targetIds: ['String 1'], indices: [i] },
                     { type: 'lock', targetIds: ['String 2'], indices: [i] }
@@ -88,7 +88,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState(`Complete. Hamming Distance: ${dist}`), 
+        snapshot: makeState(`Complete. Hamming Distance: ${dist}`, {}, 5), 
         events: [],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

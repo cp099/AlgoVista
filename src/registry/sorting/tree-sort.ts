@@ -58,22 +58,22 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let swaps = 0;
     let writes = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'main': { type: 'array', id: 'Input Array', data: [...arr] },
             'tree': { type: 'graph', id: 'BST', nodes: [...nodes], edges: [...edges], isDirected: true }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Tree Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Tree Sort", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. BUILD BST
     for (let i = 0; i < n; i++) {
         const val = arr[i];
         
         yield { 
-            snapshot: makeState(`Inserting ${val} into BST`, { i, val }), 
+            snapshot: makeState(`Inserting ${val} into BST`, { i, val }, 2), 
             events: [{ type: 'visit', targetIds: ['Input Array'], indices: [i] }],
             metrics: { comparisons, swaps, writes } 
         };
@@ -89,7 +89,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 depth++;
                 comparisons++; // <--- Increment comparison
                 yield { 
-                    snapshot: makeState(`Traversing: ${val} vs ${curr.val}`, { i, val, curr: curr.val }), 
+                    snapshot: makeState(`Traversing: ${val} vs ${curr.val}`, { i, val, curr: curr.val }, 2), 
                     events: [{ type: 'compare', targetIds: ['BST'], indices: [parseInt(curr.id.slice(1))] }], 
                     metrics: { comparisons, swaps, writes } 
                 };
@@ -117,7 +117,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
         
         yield { 
-            snapshot: makeState(`Inserted ${val}`, { i, val }), 
+            snapshot: makeState(`Inserted ${val}`, { i, val }, 2), 
             events: [],
             metrics: { comparisons, swaps, writes } 
         };
@@ -135,7 +135,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         arr[k] = node.val;
         writes++;
         yield { 
-            snapshot: makeState(`Visiting ${node.val} (In-Order)`, { k, val: node.val }), 
+            snapshot: makeState(`Visiting ${node.val} (In-Order)`, { k, val: node.val }, 3), 
             events: [
                 { type: 'visit', targetIds: ['BST'], indices: [parseInt(node.id.slice(1))] }, 
                 { type: 'write', targetIds: ['Input Array'], indices: [k] } 
@@ -147,11 +147,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         yield* inOrder(node.right);
     }
 
-    yield { snapshot: makeState("Tree Built. Starting In-Order Traversal."), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("Tree Built. Starting In-Order Traversal.", {}, 3), events: [], metrics: { comparisons, swaps, writes } };
     yield* inOrder(root);
 
     yield { 
-        snapshot: makeState("Tree Sort Complete"), 
+        snapshot: makeState("Tree Sort Complete", {}, 3), 
         events: [{ type: 'lock', targetIds: ['Input Array'], indices: Array.from({length:n},(_,j)=>j) }],
         metrics: { comparisons, swaps, writes } 
     };

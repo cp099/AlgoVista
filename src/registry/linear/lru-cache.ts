@@ -75,13 +75,13 @@ class LRUCache {
     *get(key: number, gen: any) {
         if (this.map.has(key)) {
             const node = this.map.get(key)!;
-            yield* gen.makeStep(`GET(${key}): Found. Moving to head.`);
+            yield* gen.makeStep(`GET(${key}): Found. Moving to head.`, 2, 2);
             this.remove(node);
             this.addToHead(node);
-            yield* gen.makeStep(`GET(${key}): Moved to head.`);
+            yield* gen.makeStep(`GET(${key}): Moved to head.`, 4, 4);
             return node.val;
         }
-        yield* gen.makeStep(`GET(${key}): Miss.`);
+        yield* gen.makeStep(`GET(${key}): Miss.`, 1, 1);
         return -1;
     }
 
@@ -89,22 +89,22 @@ class LRUCache {
         if (this.map.has(key)) {
             const node = this.map.get(key)!;
             node.val = val;
-            yield* gen.makeStep(`PUT(${key},${val}): Updated. Moving to head.`);
+            yield* gen.makeStep(`PUT(${key},${val}): Updated. Moving to head.`, 9, 9);
             this.remove(node);
             this.addToHead(node);
-            yield* gen.makeStep(`PUT(${key},${val}): Moved to head.`);
+            yield* gen.makeStep(`PUT(${key},${val}): Moved to head.`, 10, 10);
         } else {
             if (this.map.size === this.capacity) {
                 const tail = this.tail.prev!;
-                yield* gen.makeStep(`PUT(${key},${val}): Cache full. Evicting ${tail.key}.`);
+                yield* gen.makeStep(`PUT(${key},${val}): Cache full. Evicting ${tail.key}.`, 15, 15);
                 this.remove(tail);
                 this.map.delete(tail.key);
             }
             const newNode = new DLLNode(key, val);
-            yield* gen.makeStep(`PUT(${key},${val}): New item. Adding to head.`);
+            yield* gen.makeStep(`PUT(${key},${val}): New item. Adding to head.`, 12, 12);
             this.addToHead(newNode);
             this.map.set(key, newNode);
-            yield* gen.makeStep(`PUT(${key},${val}): Added.`);
+            yield* gen.makeStep(`PUT(${key},${val}): Added.`, 14, 14);
         }
     }
 }
@@ -114,7 +114,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const capacity = 3;
     const cache = new LRUCache(capacity);
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         
@@ -133,18 +133,18 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             structures: { 
                 'main': { type: 'graph', id: 'Cache (Head -> Tail)', nodes, edges, isDirected: true }
             },
-            context: { variables: { size: cache.map.size, capacity }, message: msg }
+            context: { variables: { size: cache.map.size, capacity }, pseudocodeLine: line, message: msg }
         };
     };
 
     // Generator helper to yield steps
     const generatorHelper = {
-        *makeStep(msg: string) {
-            yield { snapshot: makeState(msg), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+        *makeStep(msg: string, line: number = 0) {
+            yield { snapshot: makeState(msg, line), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
         }
     };
     
-    yield* generatorHelper.makeStep("Initialized LRU Cache");
+    yield* generatorHelper.makeStep("Initialized LRU Cache", 7);
 
     for (const op of sequence) {
         const [type, key, val] = op;
@@ -155,7 +155,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    yield* generatorHelper.makeStep("Sequence Complete");
+    yield* generatorHelper.makeStep("Sequence Complete", 7);
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

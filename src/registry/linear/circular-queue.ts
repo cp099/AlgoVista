@@ -43,7 +43,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let rear = 0;
     let count = 0;
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         return {
             structures: { 
                 'main': { 
@@ -56,13 +56,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             },
             context: { 
                 variables: { front, rear, count, capacity: N }, 
-                pseudocodeLine: 0, 
+                pseudocodeLine: line, 
                 message: msg 
             }
         };
     };
 
-    yield { snapshot: makeState("Initialized Fixed Array"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Initialized Fixed Array", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // Simulation Logic:
     // We will Enqueue elements. If full, we Dequeue one to make space, demonstrating the cycle.
@@ -71,7 +71,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         // 1. Check Full
         if (count === N) {
             yield { 
-                snapshot: makeState(`Queue is Full! Need to Dequeue to make space for ${val}`), 
+                snapshot: makeState(`Queue is Full! Need to Dequeue to make space for ${val}`, 2), 
                 events: [],
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -81,7 +81,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             queueData[front] = '-'; // Mark empty visual
             
             yield { 
-                snapshot: makeState(`Dequeuing ${removed} from index ${front}`), 
+                snapshot: makeState(`Dequeuing ${removed} from index ${front}`, 9), 
                 events: [{ type: 'visit', targetIds: ['main'], indices: [front] }], // Red flash
                 metrics: { comparisons: 0, swaps: 0, writes: 1 } 
             };
@@ -90,7 +90,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             count--;
             
             yield { 
-                snapshot: makeState(`Front moved to ${front} (Wrap around logic)`), 
+                snapshot: makeState(`Front moved to ${front} (Wrap around logic)`, 10), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [front] }], // Highlight new front
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -100,7 +100,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         queueData[rear] = val;
         
         yield { 
-            snapshot: makeState(`Enqueuing ${val} at Rear index ${rear}`), 
+            snapshot: makeState(`Enqueuing ${val} at Rear index ${rear}`, 3), 
             events: [{ type: 'write', targetIds: ['main'], indices: [rear] }], // Green flash
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
@@ -109,14 +109,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         count++;
 
         yield { 
-            snapshot: makeState(`Rear moved to ${rear}`), 
+            snapshot: makeState(`Rear moved to ${rear}`, 4), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
     }
 
     yield { 
-        snapshot: makeState("Sequence Complete"), 
+        snapshot: makeState("Sequence Complete", 1), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:N},(_,k)=>k) }],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

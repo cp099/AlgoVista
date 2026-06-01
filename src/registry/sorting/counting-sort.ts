@@ -40,22 +40,22 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     // Initialize count array
     const countArr = new Array(maxVal + 1).fill(0);
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 
             'main': { type: 'array', id: 'Input Array', data: [...arr] },
             'counts': { type: 'array', id: 'Count Array', data: [...countArr] }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, "Initialize Count Array (Size = MaxVal + 1)"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Initialize Count Array (Size = MaxVal + 1)", 3), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. COUNT FREQUENCIES
     for (let i = 0; i < n; i++) {
         const val = arr[i];
         
         yield { 
-            snapshot: makeState({ i, val }, `Reading Input[${i}] = ${val}`), 
+            snapshot: makeState({ i, val }, `Reading Input[${i}] = ${val}`, 4), 
             events: [{ type: 'visit', targetIds: ['Input Array'], indices: [i] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -63,7 +63,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         countArr[val]++;
         
         yield { 
-            snapshot: makeState({ i, val }, `Incrementing Count[${val}]`), 
+            snapshot: makeState({ i, val }, `Incrementing Count[${val}]`, 5), 
             events: [{ type: 'write', targetIds: ['Count Array'], indices: [val] }],
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     for (let i = 0; i <= maxVal; i++) {
         while (countArr[i] > 0) {
             yield { 
-                snapshot: makeState({ i, count: countArr[i] }, `Count[${i}] is > 0. Restoring ${i} to Input.`), 
+                snapshot: makeState({ i, count: countArr[i] }, `Count[${i}] is > 0. Restoring ${i} to Input.`, 7), 
                 events: [{ type: 'visit', targetIds: ['Count Array'], indices: [i] }],
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -83,7 +83,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             countArr[i]--;
             
             yield { 
-                snapshot: makeState({ i, k }, `Overwriting Input[${k}] with ${i}`), 
+                snapshot: makeState({ i, k }, `Overwriting Input[${k}] with ${i}`, 9), 
                 events: [
                     { type: 'write', targetIds: ['Input Array'], indices: [k] },
                     { type: 'write', targetIds: ['Count Array'], indices: [i] } // Show count decreasing
@@ -95,7 +95,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "Counting Sort Complete"), 
+        snapshot: makeState({}, "Counting Sort Complete", 7), 
         events: [{ type: 'lock', targetIds: ['Input Array'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

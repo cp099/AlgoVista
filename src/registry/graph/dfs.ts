@@ -45,17 +45,18 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const visited = new Set<number>();
     const recursionStack: number[] = [];
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'main': { type: 'graph', id: 'Graph', nodes, edges, isDirected: false } 
         },
         context: { 
             variables: { 'Recursion Stack': `[${recursionStack.join(',')}]` }, 
+            pseudocodeLine: line,
             message: msg 
         }
     });
 
-    yield { snapshot: makeState("Starting DFS..."), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting DFS...", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // Recursive Helper
     function* dfsRecursive(v: number): Generator<any> {
@@ -63,7 +64,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         recursionStack.push(v);
         
         yield { 
-            snapshot: makeState(`Visiting Node ${v}`), 
+            snapshot: makeState(`Visiting Node ${v}`, 2), 
             events: [{ type: 'visit', targetIds: ['main'], indices: [v] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -71,7 +72,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const neighbors = adj[v] || [];
         for (const u of neighbors) {
             yield { 
-                snapshot: makeState(`Checking neighbor ${u} of ${v}`), 
+                snapshot: makeState(`Checking neighbor ${u} of ${v}`, 4), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [u] }],
                 metrics: { comparisons: 1, swaps: 0, writes: 0 } 
             };
@@ -83,7 +84,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         
         recursionStack.pop();
         yield { 
-            snapshot: makeState(`Finished with Node ${v}. Backtracking.`), 
+            snapshot: makeState(`Finished with Node ${v}. Backtracking.`, 4), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [v] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -92,7 +93,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     yield* dfsRecursive(startNode);
     
     yield { 
-        snapshot: makeState("DFS Complete"), 
+        snapshot: makeState("DFS Complete", 1), 
         events: [],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

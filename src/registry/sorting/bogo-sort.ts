@@ -26,12 +26,12 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { n, ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { n, ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, "Starting Bogo Sort... Good luck."), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting Bogo Sort... Good luck.", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // Explicitly define return type: Generator<AlgoStep, boolean, void>
     // Yields: AlgoStep
@@ -40,7 +40,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let i = 0; i < n - 1; i++) {
             comparisons++;
             yield { 
-                snapshot: makeState({ i }, `Checking: Is ${arr[i]} > ${arr[i+1]}?`), 
+                snapshot: makeState({ i }, `Checking: Is ${arr[i]} > ${arr[i+1]}?`, 1), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i, i+1] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -56,7 +56,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const temp = arr[i]; arr[i] = arr[j]; arr[j] = temp;
             swaps++;
             yield { 
-                snapshot: makeState({ i, j }, `Shuffling...`), 
+                snapshot: makeState({ i, j }, `Shuffling...`, 2), 
                 events: [{ type: 'swap', targetIds: ['main'], indices: [i, j] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         
         if (sorted) {
             yield { 
-                snapshot: makeState({ attempts }, `Sorted after ${attempts} attempts!`), 
+                snapshot: makeState({ attempts }, `Sorted after ${attempts} attempts!`, 1), 
                 events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -83,7 +83,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         // 2. Shuffle (Delegate yield)
         yield { 
-            snapshot: makeState({ attempts }, `Not sorted. Shuffling (Attempt ${attempts})`), 
+            snapshot: makeState({ attempts }, `Not sorted. Shuffling (Attempt ${attempts})`, 1), 
             events: [],
             metrics: { comparisons, swaps, writes: 0 } 
         };
@@ -91,7 +91,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({ attempts }, `Gave up after ${attempts} attempts.`), 
+        snapshot: makeState({ attempts }, `Gave up after ${attempts} attempts.`, 1), 
         events: [],
         metrics: { comparisons, swaps, writes: 0 } 
     };

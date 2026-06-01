@@ -39,9 +39,9 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, writes = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
     const maxVal = Math.max(...arr);
@@ -54,7 +54,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (lo >= hi || d < 0) return;
 
         yield { 
-            snapshot: makeState({ lo, hi, d }, `Sorting range [${lo}, ${hi}] by digit ${Math.pow(10, d)}`), 
+            snapshot: makeState({ lo, hi, d }, `Sorting range [${lo}, ${hi}] by digit ${Math.pow(10, d)}`, 1), 
             events: [{ type: 'visit', targetIds: ['main'], indices: Array.from({length: hi-lo+1}, (_, k) => k + lo) }],
             metrics: { comparisons, swaps: 0, writes } 
         };
@@ -80,7 +80,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             aux[targetPos] = arr[i];
             
             yield { 
-                snapshot: makeState({ lo, hi, val: arr[i] }, `Bucketing ${arr[i]} based on digit ${digit}`), 
+                snapshot: makeState({ lo, hi, val: arr[i] }, `Bucketing ${arr[i]} based on digit ${digit}`, 4), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -91,7 +91,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             arr[i] = aux[i - lo];
             writes++;
             yield { 
-                snapshot: makeState({ lo, hi, i }, `Copying back sorted chunk`), 
+                snapshot: makeState({ lo, hi, i }, `Copying back sorted chunk`, 13), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -117,12 +117,12 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    yield { snapshot: makeState({}, "Starting MSD Radix Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting MSD Radix Sort", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
     
     yield* msdSort(0, n - 1, maxDigits - 1);
 
     yield { 
-        snapshot: makeState({}, "Radix Sort MSD Complete"), 
+        snapshot: makeState({}, "Radix Sort MSD Complete", 1), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps: 0, writes } 
     };

@@ -36,22 +36,22 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const outputArr: number[] = [];
     let list = [...uniqueChars]; // Dynamic
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'input': { type: 'array', id: 'Input', data: [...inputArr] },
             'list': { type: 'array', id: 'Symbol List (Dynamic)', data: [...list] },
             'output': { type: 'array', id: 'Encoded Output', data: [...outputArr] }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Move-to-Front"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Move-to-Front", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     for (let i = 0; i < inputArr.length; i++) {
         const char = inputArr[i];
         
         yield { 
-            snapshot: makeState(`Processing '${char}'`, { i }), 
+            snapshot: makeState(`Processing '${char}'`, { i }, 2), 
             events: [{ type: 'visit', targetIds: ['Input'], indices: [i] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -60,7 +60,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         outputArr.push(idx);
 
         yield { 
-            snapshot: makeState(`Found '${char}' at index ${idx}. Outputting ${idx}.`, { i, idx }), 
+            snapshot: makeState(`Found '${char}' at index ${idx}. Outputting ${idx}.`, { i, idx }, 3), 
             events: [
                 { type: 'compare', targetIds: ['Symbol List (Dynamic)'], indices: [idx] },
                 { type: 'write', targetIds: ['Encoded Output'], indices: [outputArr.length - 1] }
@@ -73,14 +73,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         list.unshift(char);
 
         yield { 
-            snapshot: makeState(`Moved '${char}' to front`, { i }), 
+            snapshot: makeState(`Moved '${char}' to front`, { i }, 6), 
             events: [{ type: 'write', targetIds: ['Symbol List (Dynamic)'], indices: [0] }],
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
     }
 
     yield { 
-        snapshot: makeState("Transform Complete"), 
+        snapshot: makeState("Transform Complete", {}, 2), 
         events: [],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

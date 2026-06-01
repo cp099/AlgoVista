@@ -42,16 +42,16 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     // We will create one "Holes" array structure that holds the counts
     const holes = new Array(range).fill(0);
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'main': { type: 'array', id: 'Input Array', data: [...arr] },
             // We visualize the holes as a secondary array
             'holes': { type: 'array', id: `Pigeonholes (Range ${minVal}-${maxVal})`, data: [...holes] }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Pigeonhole Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Pigeonhole Sort", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. FILL HOLES
     for (let i = 0; i < n; i++) {
@@ -59,7 +59,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const idx = val - minVal;
         
         yield { 
-            snapshot: makeState(`Reading ${val}`, { i, val }), 
+            snapshot: makeState(`Reading ${val}`, { i, val }, 4), 
             events: [{ type: 'visit', targetIds: ['Input Array'], indices: [i] }],
             metrics: { comparisons: 0, swaps: 0, writes } 
         };
@@ -68,7 +68,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         writes++;
         
         yield { 
-            snapshot: makeState(`Placing into Hole ${idx} (Value ${val})`, { i, val, idx }), 
+            snapshot: makeState(`Placing into Hole ${idx} (Value ${val})`, { i, val, idx }, 4), 
             events: [{ type: 'write', targetIds: ['Pigeonholes (Range ' + minVal + '-' + maxVal + ')'], indices: [idx] }],
             metrics: { comparisons: 0, swaps: 0, writes } 
         };
@@ -83,7 +83,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             writes++;
 
             yield { 
-                snapshot: makeState(`Restoring ${j + minVal} from Hole ${j}`, { index, val: j+minVal }), 
+                snapshot: makeState(`Restoring ${j + minVal} from Hole ${j}`, { index, val: j+minVal }, 8), 
                 events: [
                     { type: 'write', targetIds: ['Input Array'], indices: [index] },
                     { type: 'write', targetIds: ['Pigeonholes (Range ' + minVal + '-' + maxVal + ')'], indices: [j] }
@@ -95,7 +95,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Pigeonhole Sort Complete"), 
+        snapshot: makeState("Pigeonhole Sort Complete", {}, 6), 
         events: [{ type: 'lock', targetIds: ['Input Array'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps: 0, writes } 
     };

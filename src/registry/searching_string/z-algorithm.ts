@@ -49,21 +49,21 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const Z = new Array(n).fill(0);
     let comparisons = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'str': { type: 'array', id: 'Combined String', data: S },
             'z': { type: 'array', id: 'Z-Values', data: [...Z] }
         },
-        context: { variables: { ...vars, L: vars.L, R: vars.R }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars, L: vars.L, R: vars.R }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Z-Algorithm"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Z-Algorithm", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     let L = 0, R = 0;
     
     for (let i = 1; i < n; i++) {
         yield { 
-            snapshot: makeState(`Processing index ${i}`, { i, L, R }), 
+            snapshot: makeState(`Processing index ${i}`, { i, L, R }, 3), 
             events: [{ type: 'visit', targetIds: ['Combined String'], indices: [i] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
@@ -73,7 +73,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             while (R < n && S[R] === S[R - L]) {
                 comparisons++;
                 yield { 
-                    snapshot: makeState(`Naive Matching: S[${R}] vs S[${R-L}]`, { i, L, R, matchLen: R-L }), 
+                    snapshot: makeState(`Naive Matching: S[${R}] vs S[${R-L}]`, { i, L, R, matchLen: R-L }, 6), 
                     events: [{ type: 'compare', targetIds: ['Combined String'], indices: [R, R-L] }],
                     metrics: { comparisons, swaps: 0, writes: 0 } 
                 };
@@ -82,7 +82,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             Z[i] = R - L;
             R--;
             yield { 
-                snapshot: makeState(`Z[${i}] = ${Z[i]}`, { i, L, R }), 
+                snapshot: makeState(`Z[${i}] = ${Z[i]}`, { i, L, R }, 7), 
                 events: [{ type: 'write', targetIds: ['Z-Values'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -91,7 +91,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (Z[k] < R - i + 1) {
                 Z[i] = Z[k];
                 yield { 
-                    snapshot: makeState(`Inside Z-Box: Copying Z[${k}] to Z[${i}]`, { i, k, Zk: Z[k] }), 
+                    snapshot: makeState(`Inside Z-Box: Copying Z[${k}] to Z[${i}]`, { i, k, Zk: Z[k] }, 7), 
                     events: [{ type: 'write', targetIds: ['Z-Values'], indices: [i] }],
                     metrics: { comparisons, swaps: 0, writes: 0 } 
                 };
@@ -100,7 +100,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 while (R < n && S[R] === S[R - L]) {
                     comparisons++;
                     yield { 
-                        snapshot: makeState(`Extending Z-Box: S[${R}] vs S[${R-L}]`, { i, L, R }), 
+                        snapshot: makeState(`Extending Z-Box: S[${R}] vs S[${R-L}]`, { i, L, R }, 11), 
                         events: [{ type: 'compare', targetIds: ['Combined String'], indices: [R, R-L] }],
                         metrics: { comparisons, swaps: 0, writes: 0 } 
                     };
@@ -109,7 +109,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 Z[i] = R - L;
                 R--;
                 yield { 
-                    snapshot: makeState(`Updated Z[${i}] = ${Z[i]}`, { i, L, R }), 
+                    snapshot: makeState(`Updated Z[${i}] = ${Z[i]}`, { i, L, R }, 7), 
                     events: [{ type: 'write', targetIds: ['Z-Values'], indices: [i] }],
                     metrics: { comparisons, swaps: 0, writes: 0 } 
                 };
@@ -119,7 +119,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         // Check if pattern found
         if (Z[i] === m) {
             yield { 
-                snapshot: makeState(`Pattern Found at index ${i - m - 1} (in original text)!`, { i, result: i - m - 1 }), 
+                snapshot: makeState(`Pattern Found at index ${i - m - 1} (in original text)!`, { i, result: i - m - 1 }, 11), 
                 events: [{ type: 'lock', targetIds: ['Combined String'], indices: Array.from({length: m}, (_, k) => i + k) }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -127,7 +127,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Z-Algorithm Complete"), 
+        snapshot: makeState("Z-Algorithm Complete", {}, 3), 
         events: [],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

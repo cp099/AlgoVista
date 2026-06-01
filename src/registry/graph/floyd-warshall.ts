@@ -32,7 +32,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
     let dist = graph.map(row => [...row]);
     let comparisons = 0, writes = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => {
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => {
         const structures: Record<string, any> = {};
         for (let i = 0; i < V; i++) {
             structures[`row${i}`] = { 
@@ -44,16 +44,16 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
         }
         return {
             structures,
-            context: { variables: { ...vars, 'k (intermediate)': vars.k ?? '-' }, message: msg }
+            context: { variables: { ...vars, 'k (intermediate)': vars.k ?? '-' }, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Initialized Distance Matrix"), events: [], metrics: { comparisons, swaps: 0, writes } };
+    yield { snapshot: makeState("Initialized Distance Matrix", {}, 1), events: [], metrics: { comparisons, swaps: 0, writes } };
 
     // Main loops
     for (let k = 0; k < V; k++) {
         yield { 
-            snapshot: makeState(`Considering Node ${k} as intermediate path`, { k }),
+            snapshot: makeState(`Considering Node ${k} as intermediate path`, { k }, 2),
             events: [],
             metrics: { comparisons, swaps: 0, writes }
         };
@@ -61,7 +61,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
             for (let j = 0; j < V; j++) {
                 comparisons++;
                 yield { 
-                    snapshot: makeState(`Check path ${i}->${k}->${j}`, { k, i, j }),
+                    snapshot: makeState(`Check path ${i}->${k}->${j}`, { k, i, j }, 5),
                     events: [
                         { type: 'compare', targetIds: [`Row ${i}`], indices: [k] },
                         { type: 'compare', targetIds: [`Row ${k}`], indices: [j] },
@@ -75,7 +75,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
                     dist[i][j] = pathViaK;
                     writes++;
                     yield { 
-                        snapshot: makeState(`Found shorter path from ${i} to ${j} via ${k}. New dist: ${pathViaK}`),
+                        snapshot: makeState(`Found shorter path from ${i} to ${j} via ${k}. New dist: ${pathViaK}`, { k, i, j }, 6),
                         events: [{ type: 'write', targetIds: [`Row ${i}`], indices: [j] }],
                         metrics: { comparisons, swaps: 0, writes }
                     };
@@ -84,7 +84,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
         }
     }
 
-    yield { snapshot: makeState("Floyd-Warshall Complete"), events: [], metrics: { comparisons, swaps: 0, writes } };
+    yield { snapshot: makeState("Floyd-Warshall Complete", {}, 2), events: [], metrics: { comparisons, swaps: 0, writes } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

@@ -36,16 +36,16 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     let comparisons = 0, writes = 0;
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'prices': { type: 'array', id: 'Prices', data: [...prices], visualMode: 'bar' },
             'spans': { type: 'array', id: 'Spans', data: [...spans], visualMode: 'box' },
             'stack': { type: 'array', id: 'Index Stack', data: [...stack], orientation: 'vertical', visualMode: 'box' }
         },
-        context: { variables: {}, message: msg }
+        context: { variables: {}, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Initialized"), events: [], metrics: { comparisons, swaps: 0, writes } };
+    yield { snapshot: makeState("Initialized", 1), events: [], metrics: { comparisons, swaps: 0, writes } };
 
     for (let i = 0; i < n; i++) {
         yield { 
@@ -59,7 +59,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             comparisons++;
             const topIndex = stack[stack.length - 1];
             yield { 
-                snapshot: makeState(`Price[${topIndex}]=${prices[topIndex]} <= Price[${i}]=${prices[i]}. Popping stack.`), 
+                snapshot: makeState(`Price[${topIndex}]=${prices[topIndex]} <= Price[${i}]=${prices[i]}. Popping stack.`, 5), 
                 events: [
                     { type: 'compare', targetIds: ['Prices'], indices: [topIndex, i] },
                     { type: 'visit', targetIds: ['Index Stack'], indices: [stack.length-1] }
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             comparisons++;
             const topIndex = stack[stack.length - 1];
             yield { 
-                snapshot: makeState(`Price[${topIndex}]=${prices[topIndex]} > Price[${i}]=${prices[i]}.`), 
+                snapshot: makeState(`Price[${topIndex}]=${prices[topIndex]} > Price[${i}]=${prices[i]}.`, 5), 
                 events: [{ type: 'compare', targetIds: ['Prices'], indices: [topIndex, i] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -86,7 +86,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         writes++;
         
         yield { 
-            snapshot: makeState(`Span for day ${i} is ${spans[i]}`), 
+            snapshot: makeState(`Span for day ${i} is ${spans[i]}`, 6), 
             events: [{ type: 'write', targetIds: ['Spans'], indices: [i] }],
             metrics: { comparisons, swaps: 0, writes } 
         };
@@ -94,14 +94,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         // Push this element to stack
         stack.push(i);
         yield { 
-            snapshot: makeState(`Pushing index ${i} to stack`), 
+            snapshot: makeState(`Pushing index ${i} to stack`, 7), 
             events: [{ type: 'write', targetIds: ['Index Stack'], indices: [stack.length-1] }],
             metrics: { comparisons, swaps: 0, writes } 
         };
     }
 
     yield { 
-        snapshot: makeState("Complete"), 
+        snapshot: makeState("Complete", 1), 
         events: [{ type: 'lock', targetIds: ['Spans'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps: 0, writes } 
     };

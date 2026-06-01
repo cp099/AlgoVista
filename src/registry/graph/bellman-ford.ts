@@ -54,7 +54,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let comparisons = 0, writes = 0; // Initialize metrics
     dist[startNode] = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => {
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => {
         const labeledNodes = nodes.map(n => ({
             ...n,
             label: `${n.label}\n(${dist[parseInt(n.id)] === Infinity ? '∞' : dist[parseInt(n.id)]})`
@@ -63,11 +63,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             structures: { 
                 'main': { type: 'graph', id: 'Graph', nodes: labeledNodes, edges, isDirected: true }
             },
-            context: { variables: { ...vars }, message: msg }
+            context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Initialized distances"), events: [], metrics: { comparisons, swaps: 0, writes } };
+    yield { snapshot: makeState("Initialized distances", {}, 1), events: [], metrics: { comparisons, swaps: 0, writes } };
 
     // 1. Relax Edges V-1 times
     for (let i = 1; i < numVertices; i++) {
@@ -82,7 +82,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const w = edge.weight!;
             
             yield { 
-                snapshot: makeState(`Relaxing edge (${nodes[u].label}, ${nodes[v].label})`),
+                snapshot: makeState(`Relaxing edge (${nodes[u].label}, ${nodes[v].label})`, {}, 3),
                 events: [{ type: 'compare', targetIds: ['main'], indices: [u, v] }],
                 metrics: { comparisons: comparisons++, swaps: 0, writes }
             };
@@ -91,7 +91,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 dist[v] = dist[u] + w;
                 writes++;
                 yield { 
-                    snapshot: makeState(`Updated dist(${nodes[v].label}) to ${dist[v]}`),
+                    snapshot: makeState(`Updated dist(${nodes[v].label}) to ${dist[v]}`, {}, 4),
                     events: [{ type: 'write', targetIds: ['main'], indices: [v] }],
                     metrics: { comparisons, swaps: 0, writes }
                 };
@@ -100,7 +100,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     // 2. Check for negative cycles
-    yield { snapshot: makeState("Checking for negative-weight cycles..."), events: [], metrics: { comparisons, swaps: 0, writes } };
+    yield { snapshot: makeState("Checking for negative-weight cycles...", {}, 7), events: [], metrics: { comparisons, swaps: 0, writes } };
     
     for (const edge of edges) {
         const u = parseInt(edge.source);
@@ -108,7 +108,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const w = edge.weight!;
         if (dist[u] !== Infinity && dist[u] + w < dist[v]) {
             yield { 
-                snapshot: makeState(`Negative cycle detected at edge (${nodes[u].label}, ${nodes[v].label})!`),
+                snapshot: makeState(`Negative cycle detected at edge (${nodes[u].label}, ${nodes[v].label})!`, {}, 8),
                 events: [{ type: 'visit', targetIds: ['main'], indices: [u, v] }], // Red highlight
                 metrics: { comparisons: comparisons + 1, swaps: 0, writes }
             };
@@ -116,7 +116,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    yield { snapshot: makeState("Bellman-Ford Complete. No negative cycles."), events: [], metrics: { comparisons, swaps: 0, writes } };
+    yield { snapshot: makeState("Bellman-Ford Complete. No negative cycles.", {}, 1), events: [], metrics: { comparisons, swaps: 0, writes } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

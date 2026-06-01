@@ -46,7 +46,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let rear = 0;
     let count = 0;
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         return {
             structures: { 
                 'main': { 
@@ -59,13 +59,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             },
             context: { 
                 variables: { front, rear, count, capacity: N }, 
-                pseudocodeLine: 0, 
+                pseudocodeLine: line, 
                 message: msg 
             }
         };
     };
 
-    yield { snapshot: makeState("Deque Initialized (Empty)"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Deque Initialized (Empty)", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // Helpers for logic
     const isFull = () => count === N;
@@ -90,7 +90,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (step === 2 || step === 5) {
             // === INSERT FRONT ===
             if (isFull()) {
-                yield { snapshot: makeState("Deque Full!"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+                yield { snapshot: makeState("Deque Full!", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
                 break;
             }
 
@@ -98,7 +98,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             front = (front - 1 + N) % N;
             
             yield { 
-                snapshot: makeState(`Insert Front: Moved pointer to ${front}`), 
+                snapshot: makeState(`Insert Front: Moved pointer to ${front}`, 2), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [front] }], 
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -107,7 +107,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             count++;
 
             yield { 
-                snapshot: makeState(`Inserted ${val} at Front [${front}]`), 
+                snapshot: makeState(`Inserted ${val} at Front [${front}]`, 3), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [front] }], 
                 metrics: { comparisons: 0, swaps: 0, writes: 1 } 
             };
@@ -120,7 +120,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             data[front] = '-';
 
             yield { 
-                snapshot: makeState(`Delete Front: Removing ${removed}`), 
+                snapshot: makeState(`Delete Front: Removing ${removed}`, 10), 
                 events: [{ type: 'visit', targetIds: ['main'], indices: [front] }], 
                 metrics: { comparisons: 0, swaps: 0, writes: 1 } 
             };
@@ -129,7 +129,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             count--;
 
             yield { 
-                snapshot: makeState(`New Front is ${front}`), 
+                snapshot: makeState(`New Front is ${front}`, 11), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [front] }], 
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -146,7 +146,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
              data[rear] = '-';
 
              yield { 
-                snapshot: makeState(`Delete Rear: Removing ${removed} at ${rear}`), 
+                snapshot: makeState(`Delete Rear: Removing ${removed} at ${rear}`, 15), 
                 events: [{ type: 'visit', targetIds: ['main'], indices: [rear] }], 
                 metrics: { comparisons: 0, swaps: 0, writes: 1 } 
             };
@@ -156,13 +156,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         } else {
             // === INSERT REAR (Default) ===
             if (isFull()) {
-                yield { snapshot: makeState("Deque Full!"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+                yield { snapshot: makeState("Deque Full!", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
                 break;
             }
 
             data[rear] = val;
             yield { 
-                snapshot: makeState(`Insert Rear: Placed ${val} at ${rear}`), 
+                snapshot: makeState(`Insert Rear: Placed ${val} at ${rear}`, 6), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [rear] }], 
                 metrics: { comparisons: 0, swaps: 0, writes: 1 } 
             };
@@ -171,7 +171,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             count++;
 
             yield { 
-                snapshot: makeState(`New Rear is ${rear}`), 
+                snapshot: makeState(`New Rear is ${rear}`, 7), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [rear] }], 
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -179,7 +179,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Sequence Complete"), 
+        snapshot: makeState("Sequence Complete", 1), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:N},(_,k)=>k) }],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

@@ -41,7 +41,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let swaps = 0;
     let writes = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => {
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => {
         const structures: Record<string, any> = {
             'main': { type: 'array', id: 'Main Array', data: [...arr] }
         };
@@ -54,11 +54,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
         return {
             structures,
-            context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+            context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Starting Bucket Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Bucket Sort", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. SCATTER
     for (let i = 0; i < n; i++) {
@@ -66,7 +66,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const bIdx = Math.floor((K * val) / maxVal);
         
         yield { 
-            snapshot: makeState(`Distributing ${val} into Bucket ${bIdx}`, { i, val, bIdx }), 
+            snapshot: makeState(`Distributing ${val} into Bucket ${bIdx}`, { i, val, bIdx }, 4), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [i] }],
             metrics: { comparisons, swaps, writes } 
         };
@@ -76,7 +76,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         writes++;
 
         yield { 
-            snapshot: makeState(`Moved ${val} to Bucket ${bIdx}`, { i, val, bIdx }), 
+            snapshot: makeState(`Moved ${val} to Bucket ${bIdx}`, { i, val, bIdx }, 6), 
             events: [
                 { type: 'write', targetIds: ['main'], indices: [i] },
                 { type: 'write', targetIds: [`b${bIdx}`], indices: [buckets[bIdx].length - 1] }
@@ -91,7 +91,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (bucket.length <= 1) continue;
 
         yield { 
-            snapshot: makeState(`Sorting Bucket ${b}`, { b }), 
+            snapshot: makeState(`Sorting Bucket ${b}`, { b }, 7), 
             events: [], 
             metrics: { comparisons, swaps, writes } 
         };
@@ -109,7 +109,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                     writes++;
                     
                     yield { 
-                        snapshot: makeState(`Sorting Bucket ${b}: Shifting`, { b }), 
+                        snapshot: makeState(`Sorting Bucket ${b}: Shifting`, { b }, 7), 
                         events: [{ type: 'write', targetIds: [`b${b}`], indices: [j+1, j+2] }],
                         metrics: { comparisons, swaps, writes } 
                     };
@@ -138,7 +138,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const val = bucket.shift()!; // Remove from front (Queue style)
             
             yield { 
-                snapshot: makeState(`Gathering ${val} from Bucket ${b}`, { b, mainIdx }), 
+                snapshot: makeState(`Gathering ${val} from Bucket ${b}`, { b, mainIdx }, 9), 
                 events: [
                     { type: 'visit', targetIds: [`b${b}`], indices: [0] }, // Highlight element leaving
                     { type: 'write', targetIds: ['main'], indices: [mainIdx] }
@@ -160,7 +160,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Bucket Sort Complete"), 
+        snapshot: makeState("Bucket Sort Complete", {}, 9), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes } 
     };

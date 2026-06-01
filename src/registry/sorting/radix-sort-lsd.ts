@@ -29,9 +29,9 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, writes = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
     const maxVal = Math.max(...arr);
@@ -40,7 +40,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     for (let exp = 1; Math.floor(maxVal / exp) > 0; exp *= 10) {
         
         yield { 
-            snapshot: makeState({ exp }, `Sorting by digit place: ${exp}`), 
+            snapshot: makeState({ exp }, `Sorting by digit place: ${exp}`, 3), 
             events: [],
             metrics: { comparisons, swaps: 0, writes } 
         };
@@ -55,7 +55,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             count[digit]++;
             
             yield { 
-                snapshot: makeState({ exp, i, digit }, `Scanning ${arr[i]}: digit is ${digit}`), 
+                snapshot: makeState({ exp, i, digit }, `Scanning ${arr[i]}: digit is ${digit}`, 4), 
                 events: [{ type: 'visit', targetIds: ['main'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -77,7 +77,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             count[digit]--;
             
             yield { 
-                snapshot: makeState({ exp, i, targetIndex }, `Moving ${arr[i]} based on digit ${digit}`), 
+                snapshot: makeState({ exp, i, targetIndex }, `Moving ${arr[i]} based on digit ${digit}`, 4), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -89,7 +89,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             arr[i] = output[i];
             writes++;
             yield { 
-                snapshot: makeState({ exp, i }, `Updating main array`), 
+                snapshot: makeState({ exp, i }, `Updating main array`, 4), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -97,7 +97,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "Radix Sort Complete"), 
+        snapshot: makeState({}, "Radix Sort Complete", 3), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps: 0, writes } 
     };

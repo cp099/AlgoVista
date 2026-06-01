@@ -36,21 +36,21 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     // Output starts empty
     const output: string[] = [];
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'input': { type: 'array', id: 'Input String', data: [...arr] },
             'output': { type: 'array', id: 'Encoded Output', data: [...output] }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting RLE Compression"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting RLE Compression", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     for (let i = 0; i < n; i++) {
         let count = 1;
         
         yield { 
-            snapshot: makeState(`Starting new run at ${arr[i]}`, { i, char: arr[i] }), 
+            snapshot: makeState(`Starting new run at ${arr[i]}`, { i, char: arr[i] }, 3), 
             events: [{ type: 'visit', targetIds: ['Input String'], indices: [i] }],
             metrics: { comparisons, swaps: 0, writes } 
         };
@@ -58,7 +58,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         while (i + 1 < n && arr[i] === arr[i + 1]) {
             comparisons++;
             yield { 
-                snapshot: makeState(`Found match: ${arr[i]} == ${arr[i+1]}. Count: ${count+1}`, { i, next: i+1, count: count+1 }), 
+                snapshot: makeState(`Found match: ${arr[i]} == ${arr[i+1]}. Count: ${count+1}`, { i, next: i+1, count: count+1 }, 5), 
                 events: [{ type: 'compare', targetIds: ['Input String'], indices: [i, i+1] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -70,7 +70,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (i + 1 < n) {
             comparisons++;
             yield { 
-                snapshot: makeState(`Mismatch: ${arr[i]} != ${arr[i+1]}. End of run.`, { i, next: i+1 }), 
+                snapshot: makeState(`Mismatch: ${arr[i]} != ${arr[i+1]}. End of run.`, { i, next: i+1 }, 5), 
                 events: [{ type: 'compare', targetIds: ['Input String'], indices: [i, i+1] }],
                 metrics: { comparisons, swaps: 0, writes } 
             };
@@ -82,14 +82,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         writes += 2;
 
         yield { 
-            snapshot: makeState(`Appending "${count}${arr[i]}" to output`, { i, count, char: arr[i] }), 
+            snapshot: makeState(`Appending "${count}${arr[i]}" to output`, { i, count, char: arr[i] }, 7), 
             events: [{ type: 'write', targetIds: ['Encoded Output'], indices: [output.length - 2, output.length - 1] }],
             metrics: { comparisons, swaps: 0, writes } 
         };
     }
 
     yield { 
-        snapshot: makeState("Compression Complete"), 
+        snapshot: makeState("Compression Complete", {}, 3), 
         events: [{ type: 'lock', targetIds: ['Encoded Output'], indices: Array.from({length:output.length},(_,k)=>k) }],
         metrics: { comparisons, swaps: 0, writes } 
     };

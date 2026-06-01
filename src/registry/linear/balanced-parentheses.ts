@@ -32,15 +32,15 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const arr = str.split('');
     const stack: string[] = [];
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'expr': { type: 'array', id: 'Input String', data: [...arr], visualMode: 'box' },
             'stack': { type: 'array', id: 'Stack', data: [...stack], orientation: 'vertical', visualMode: 'box' }
         },
-        context: { variables: {}, pseudocodeLine: 0, message: msg }
+        context: { variables: {}, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Check"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Check", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     const pairs: Record<string, string> = { ')': '(', '}': '{', ']': '[' };
     const opening = new Set(['(', '{', '[']);
@@ -49,7 +49,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const char = arr[i];
         
         yield { 
-            snapshot: makeState(`Scanning '${char}'`), 
+            snapshot: makeState(`Scanning '${char}'`, 2), 
             events: [{ type: 'visit', targetIds: ['Input String'], indices: [i] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -57,7 +57,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (opening.has(char)) {
             stack.push(char);
             yield { 
-                snapshot: makeState(`Pushing '${char}'`), 
+                snapshot: makeState(`Pushing '${char}'`, 3), 
                 events: [{ type: 'write', targetIds: ['Stack'], indices: [stack.length-1] }],
                 metrics: { comparisons: 0, swaps: 0, writes: 1 } 
             };
@@ -65,7 +65,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             // Closing bracket
             if (stack.length === 0) {
                 yield { 
-                    snapshot: makeState(`Error: Stack empty, cannot match '${char}'`), 
+                    snapshot: makeState(`Error: Stack empty, cannot match '${char}'`, 4), 
                     events: [],
                     metrics: { comparisons: 1, swaps: 0, writes: 0 } 
                 };
@@ -76,14 +76,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const expected = pairs[char];
 
             yield { 
-                snapshot: makeState(`Popped '${top}'. Expecting '${expected}' to match '${char}'`), 
+                snapshot: makeState(`Popped '${top}'. Expecting '${expected}' to match '${char}'`, 5), 
                 events: [{ type: 'visit', targetIds: ['Stack'], indices: [stack.length] }], // Visual pop
                 metrics: { comparisons: 1, swaps: 0, writes: 0 } 
             };
 
             if (top !== expected) {
                 yield { 
-                    snapshot: makeState(`Mismatch! '${top}' != '${expected}'`), 
+                    snapshot: makeState(`Mismatch! '${top}' != '${expected}'`, 6), 
                     events: [],
                     metrics: { comparisons: 0, swaps: 0, writes: 0 } 
                 };
@@ -91,7 +91,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             }
             
             yield { 
-                snapshot: makeState(`Match found: ${top}${char}`), 
+                snapshot: makeState(`Match found: ${top}${char}`, 6), 
                 events: [],
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -100,13 +100,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     if (stack.length === 0) {
         yield { 
-            snapshot: makeState("Success! All brackets balanced."), 
+            snapshot: makeState("Success! All brackets balanced.", 8), 
             events: [{ type: 'lock', targetIds: ['Input String'], indices: Array.from({length:arr.length},(_,k)=>k) }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
     } else {
         yield { 
-            snapshot: makeState("Error: Stack not empty. Unbalanced."), 
+            snapshot: makeState("Error: Stack not empty. Unbalanced.", 8), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };

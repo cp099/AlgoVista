@@ -44,11 +44,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     };
 
     // Removed unused params to fix lint warnings
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 
             'main': { type: 'graph', id: 'main', nodes, edges, isDirected: false } 
         },
-        context: { variables: { queue: vars.queue?.join(',') || '[]', ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { queue: vars.queue?.join(',') || '[]', ...vars }, pseudocodeLine: line, message: msg }
     });
 
     // BFS LOGIC
@@ -56,7 +56,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let visited = new Set([startNode]);
 
     yield { 
-        snapshot: makeState({ queue }, `Start BFS from Node ${startNode}`), 
+        snapshot: makeState({ queue }, `Start BFS from Node ${startNode}`, 1), 
         events: [{ type: 'compare', targetIds: ['main'], indices: [startNode] }], 
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };
@@ -65,7 +65,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const v = queue.shift()!;
         
         yield { 
-            snapshot: makeState({ queue, v }, `Visiting Node ${v}`), 
+            snapshot: makeState({ queue, v }, `Visiting Node ${v}`, 4), 
             events: [{ type: 'visit', targetIds: ['main'], indices: [v] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -77,7 +77,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 queue.push(u);
                 
                 yield { 
-                    snapshot: makeState({ queue, v, u }, `Discovered Neighbor ${u}`), 
+                    snapshot: makeState({ queue, v, u }, `Discovered Neighbor ${u}`, 7), 
                     events: [{ type: 'compare', targetIds: ['main'], indices: [u] }],
                     metrics: { comparisons: 0, swaps: 0, writes: 0 } 
                 };
@@ -86,14 +86,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         
         // Mark v as fully processed
         yield { 
-            snapshot: makeState({ queue }, `Node ${v} Processed`), 
+            snapshot: makeState({ queue }, `Node ${v} Processed`, 3), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [v] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
     }
 
     yield { 
-        snapshot: makeState({}, "BFS Complete"), 
+        snapshot: makeState({}, "BFS Complete", 3), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from(visited) }],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

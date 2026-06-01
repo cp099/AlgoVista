@@ -48,7 +48,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    const makeState = (msg: string, vars: { slow?: LLNode|null, fast?: LLNode|null } = {}): AlgoState => {
+    const makeState = (msg: string, vars: { slow?: LLNode|null, fast?: LLNode|null } = {}, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         
@@ -79,32 +79,32 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         return {
             structures: { 'main': { type: 'graph', id: 'Linked List', nodes, edges, isDirected: true } },
-            context: { variables: {}, message: msg }
+            context: { variables: {}, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Initial List"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Initial List", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     if (!head) return;
     
     let slow = head;
     let fast = head;
 
-    yield { snapshot: makeState(`Pointers Initialized`, { slow, fast }), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(`Pointers Initialized`, { slow, fast }, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     while (fast && fast.next) {
         slow = slow.next!;
         fast = fast.next.next!;
         
         yield { 
-            snapshot: makeState(`Moving: Slow to ${slow?.val}, Fast to ${fast?.val ?? 'null'}`, { slow, fast }), 
+            snapshot: makeState(`Moving: Slow to ${slow?.val}, Fast to ${fast?.val ?? 'null'}`, { slow, fast }, 4), 
             events: [],
             metrics: { comparisons: 1, swaps: 0, writes: 0 } 
         };
     }
 
     yield { 
-        snapshot: makeState(`Fast pointer reached end. Middle is ${slow.val}.`, { slow }), 
+        snapshot: makeState(`Fast pointer reached end. Middle is ${slow.val}.`, { slow }, 5), 
         events: [{ type: 'lock', targetIds: ['main'], indices: [] }], // Highlight middle node
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

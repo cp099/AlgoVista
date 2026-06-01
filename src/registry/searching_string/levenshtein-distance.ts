@@ -43,7 +43,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
     // Helper to generate the multi-row state
-    const makeState = (msg: string, vars: any = {}): AlgoState => {
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => {
         const structures: Record<string, any> = {
             // We skip showing the strings as separate arrays to save space, 
             // the table labels should ideally imply them, but let's show them for clarity.
@@ -62,17 +62,17 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         
         return {
             structures,
-            context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+            context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Initializing DP Table"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Initializing DP Table", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // Base Cases
     for (let i = 0; i <= m; i++) dp[i][0] = i;
     for (let j = 0; j <= n; j++) dp[0][j] = j;
 
-    yield { snapshot: makeState("Base Cases Filled"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Base Cases Filled", {}, 2), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // Fill Table
     for (let i = 1; i <= m; i++) {
@@ -81,7 +81,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const char2 = s2[j - 1];
             
             yield { 
-                snapshot: makeState(`Comparing ${char1} vs ${char2}`, { i, j }), 
+                snapshot: makeState(`Comparing ${char1} vs ${char2}`, { i, j }, 5), 
                 events: [{ type: 'compare', targetIds: [`row${i}`], indices: [j] }], // Highlight cell
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -89,7 +89,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (char1 === char2) {
                 dp[i][j] = dp[i - 1][j - 1];
                 yield { 
-                    snapshot: makeState(`Match! Copy diagonal: ${dp[i][j]}`, { i, j }), 
+                    snapshot: makeState(`Match! Copy diagonal: ${dp[i][j]}`, { i, j }, 6), 
                     events: [{ type: 'write', targetIds: [`row${i}`], indices: [j] }],
                     metrics: { comparisons: 0, swaps: 0, writes: 1 } 
                 };
@@ -97,7 +97,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 const minVal = Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
                 dp[i][j] = 1 + minVal;
                 yield { 
-                    snapshot: makeState(`Mismatch. 1 + min(${minVal}) = ${dp[i][j]}`, { i, j }), 
+                    snapshot: makeState(`Mismatch. 1 + min(${minVal}) = ${dp[i][j]}`, { i, j }, 7), 
                     events: [{ type: 'write', targetIds: [`row${i}`], indices: [j] }],
                     metrics: { comparisons: 0, swaps: 0, writes: 1 } 
                 };
@@ -106,7 +106,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState(`Distance: ${dp[m][n]}`), 
+        snapshot: makeState(`Distance: ${dp[m][n]}`, {}, 7), 
         events: [{ type: 'lock', targetIds: [`row${m}`], indices: [n] }],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

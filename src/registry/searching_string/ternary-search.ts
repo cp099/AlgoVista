@@ -41,15 +41,15 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars, target }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars, target }, pseudocodeLine: line, message: msg }
     });
 
     let l = 0;
     let r = n - 1;
 
-    yield { snapshot: makeState({ l, r }, "Starting Ternary Search"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({ l, r }, "Starting Ternary Search", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     while (r >= l) {
         const mid1 = l + Math.floor((r - l) / 3);
@@ -57,7 +57,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         comparisons += 2;
         yield { 
-            snapshot: makeState({ l, r, mid1, mid2 }, `Checking Pivots: ${arr[mid1]} and ${arr[mid2]}`), 
+            snapshot: makeState({ l, r, mid1, mid2 }, `Checking Pivots: ${arr[mid1]} and ${arr[mid2]}`, 2), 
             events: [
                 { type: 'compare', targetIds: ['main'], indices: [mid1] },
                 { type: 'compare', targetIds: ['main'], indices: [mid2] }
@@ -67,7 +67,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         if (arr[mid1] === target) {
             yield { 
-                snapshot: makeState({ result: mid1 }, `Found at mid1 (${mid1})`), 
+                snapshot: makeState({ result: mid1 }, `Found at mid1 (${mid1})`, 5), 
                 events: [{ type: 'lock', targetIds: ['main'], indices: [mid1] }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -75,7 +75,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
         if (arr[mid2] === target) {
             yield { 
-                snapshot: makeState({ result: mid2 }, `Found at mid2 (${mid2})`), 
+                snapshot: makeState({ result: mid2 }, `Found at mid2 (${mid2})`, 6), 
                 events: [{ type: 'lock', targetIds: ['main'], indices: [mid2] }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -85,14 +85,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (target < arr[mid1]) {
             r = mid1 - 1;
             yield { 
-                snapshot: makeState({ l, r }, `Target < ${arr[mid1]}. Search Left Third.`), 
+                snapshot: makeState({ l, r }, `Target < ${arr[mid1]}. Search Left Third.`, 7), 
                 events: [],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
         } else if (target > arr[mid2]) {
             l = mid2 + 1;
             yield { 
-                snapshot: makeState({ l, r }, `Target > ${arr[mid2]}. Search Right Third.`), 
+                snapshot: makeState({ l, r }, `Target > ${arr[mid2]}. Search Right Third.`, 8), 
                 events: [],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -100,7 +100,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             l = mid1 + 1;
             r = mid2 - 1;
             yield { 
-                snapshot: makeState({ l, r }, `Target is between ${arr[mid1]} and ${arr[mid2]}. Search Middle.`), 
+                snapshot: makeState({ l, r }, `Target is between ${arr[mid1]} and ${arr[mid2]}. Search Middle.`, 9), 
                 events: [],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -108,7 +108,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({ result: -1 }, "Target not found"), 
+        snapshot: makeState({ result: -1 }, "Target not found", 10), 
         events: [], 
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

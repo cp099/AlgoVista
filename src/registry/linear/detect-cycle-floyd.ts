@@ -62,7 +62,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         return { x: 400 + 150 * Math.cos(angle), y: 200 + 150 * Math.sin(angle) };
     };
 
-    const makeState = (msg: string, vars: { slow?: LLNode|null, fast?: LLNode|null } = {}): AlgoState => {
+    const makeState = (msg: string, vars: { slow?: LLNode|null, fast?: LLNode|null } = {}, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         
@@ -98,11 +98,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         return {
             structures: { 'main': { type: 'graph', id: 'Linked List', nodes, edges, isDirected: true } },
-            context: { variables: {}, message: msg }
+            context: { variables: {}, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("List with Cycle Created"), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("List with Cycle Created", {}, 1), events: [], metrics: { comparisons, swaps, writes } };
 
     if (!head) return;
     
@@ -111,7 +111,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     while (fast && fast.next) {
         yield { 
-            snapshot: makeState(`Moving pointers`, { slow, fast }), 
+            snapshot: makeState(`Moving pointers`, { slow, fast }, 2), 
             events: [],
             metrics: { comparisons, swaps, writes }
         };
@@ -120,7 +120,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         fast = fast.next.next!;
         
         yield { 
-            snapshot: makeState(`Pointers at: Slow=${slow?.val}, Fast=${fast?.val}`, { slow, fast }), 
+            snapshot: makeState(`Pointers at: Slow=${slow?.val}, Fast=${fast?.val}`, { slow, fast }, 4), 
             events: [],
             metrics: { comparisons, swaps, writes }
         };
@@ -128,7 +128,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         comparisons++; // The check "slow === fast" is a comparison
         if (slow === fast) {
             yield { 
-                snapshot: makeState(`Collision! Slow and Fast met at ${slow.val}. Cycle Detected!`, { slow, fast }), 
+                snapshot: makeState(`Collision! Slow and Fast met at ${slow.val}. Cycle Detected!`, { slow, fast }, 5), 
                 events: [{type: 'lock', targetIds:['main'], indices:[]}], // Highlight meeting point
                 metrics: { comparisons, swaps, writes }
             };
@@ -136,7 +136,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    yield { snapshot: makeState("No Collision. No Cycle Detected."), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("No Collision. No Cycle Detected.", {}, 7), events: [], metrics: { comparisons, swaps, writes } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

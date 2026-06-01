@@ -29,19 +29,19 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'text': { type: 'array', id: 'String', data: [...arr] } },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState({}, "Starting String Reversal"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({}, "Starting String Reversal", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     let l = 0;
     let r = n - 1;
 
     while (l < r) {
         yield { 
-            snapshot: makeState({ l, r }, `Selecting indices ${l} and ${r}`), 
+            snapshot: makeState({ l, r }, `Selecting indices ${l} and ${r}`, 2), 
             events: [
                 { type: 'visit', targetIds: ['String'], indices: [l] },
                 { type: 'visit', targetIds: ['String'], indices: [r] }
@@ -56,7 +56,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         swaps++;
 
         yield { 
-            snapshot: makeState({ l, r }, `Swapping ${arr[l]} and ${arr[r]}`), 
+            snapshot: makeState({ l, r }, `Swapping ${arr[l]} and ${arr[r]}`, 3), 
             events: [
                 { type: 'swap', targetIds: ['String'], indices: [l] },
                 { type: 'swap', targetIds: ['String'], indices: [r] }
@@ -69,7 +69,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "Reversal Complete"), 
+        snapshot: makeState({}, "Reversal Complete", 2), 
         events: [{ type: 'lock', targetIds: ['String'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons: 0, swaps, writes: 0 } 
     };

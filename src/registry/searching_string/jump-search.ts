@@ -42,15 +42,15 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { ...vars, target }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars, target }, pseudocodeLine: line, message: msg }
     });
 
     const step = Math.floor(Math.sqrt(n));
     let prev = 0;
 
-    yield { snapshot: makeState({ step }, `Jump size calculated: ${step}`), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({ step }, `Jump size calculated: ${step}`, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. Jump Phase
     
@@ -60,7 +60,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         let checkIdx = Math.min(curr + step, n) - 1;
         
         yield { 
-            snapshot: makeState({ prev: curr, step, checkIdx, val: arr[checkIdx] }, `Block end ${arr[checkIdx]} < ${target}. Jumping.`), 
+            snapshot: makeState({ prev: curr, step, checkIdx, val: arr[checkIdx] }, `Block end ${arr[checkIdx]} < ${target}. Jumping.`, 3), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [checkIdx] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
@@ -68,14 +68,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         curr += step;
         prev = curr;
         if (prev >= n) {
-             yield { snapshot: makeState({}, "Target not found (passed end)"), events: [], metrics: { comparisons, swaps: 0, writes: 0 } };
+             yield { snapshot: makeState({}, "Target not found (passed end)", 6), events: [], metrics: { comparisons, swaps: 0, writes: 0 } };
              return;
         }
     }
 
     // 2. Linear Search Phase
     yield { 
-        snapshot: makeState({ prev, target }, `Target is in block starting at ${prev}. Linear Search begins.`), 
+        snapshot: makeState({ prev, target }, `Target is in block starting at ${prev}. Linear Search begins.`, 7), 
         events: [],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };
@@ -83,14 +83,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     while (arr[prev] < target) {
         comparisons++;
         yield { 
-            snapshot: makeState({ prev, val: arr[prev] }, `Checking ${arr[prev]} < ${target}`), 
+            snapshot: makeState({ prev, val: arr[prev] }, `Checking ${arr[prev]} < ${target}`, 7), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [prev] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
         
         prev++;
         if (prev === Math.min(curr + step, n)) {
-             yield { snapshot: makeState({}, "Target not found in block"), events: [], metrics: { comparisons, swaps: 0, writes: 0 } };
+             yield { snapshot: makeState({}, "Target not found in block", 9), events: [], metrics: { comparisons, swaps: 0, writes: 0 } };
              return;
         }
     }
@@ -99,13 +99,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     comparisons++;
     if (arr[prev] === target) {
         yield { 
-            snapshot: makeState({ prev, result: prev }, `Found target at ${prev}!`), 
+            snapshot: makeState({ prev, result: prev }, `Found target at ${prev}!`, 10), 
             events: [{ type: 'lock', targetIds: ['main'], indices: [prev] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
     } else {
         yield { 
-            snapshot: makeState({ prev, val: arr[prev] }, `Stopped at ${arr[prev]}. Target not found.`), 
+            snapshot: makeState({ prev, val: arr[prev] }, `Stopped at ${arr[prev]}. Target not found.`, 11), 
             events: [],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };

@@ -36,7 +36,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const capacity = 8; 
 
     // Removed unused 'hlIndices' and 'type' parameters
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         return {
             structures: { 
                 'main': { 
@@ -52,19 +52,19 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                     size: stackData.length,
                     capacity 
                 }, 
-                pseudocodeLine: 0, 
+                pseudocodeLine: line, 
                 message: msg 
             }
         };
     };
 
-    yield { snapshot: makeState("Stack Initialized (Empty)"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Stack Initialized (Empty)", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. PUSH PHASE
     for (const val of sequence) {
         if (stackData.length >= capacity) {
             yield { 
-                snapshot: makeState("Stack Overflow! Cannot push."), 
+                snapshot: makeState("Stack Overflow! Cannot push.", 1), 
                 events: [],
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -73,7 +73,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         // Prepare to push
         yield { 
-            snapshot: makeState(`Preparing to Push ${val}...`), 
+            snapshot: makeState(`Preparing to Push ${val}...`, 1), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -83,7 +83,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const topIdx = stackData.length - 1;
 
         yield { 
-            snapshot: makeState(`Pushed ${val} to Top [Index ${topIdx}]`), 
+            snapshot: makeState(`Pushed ${val} to Top [Index ${topIdx}]`, 2), 
             events: [{ type: 'write', targetIds: ['main'], indices: [topIdx] }], 
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
@@ -93,7 +93,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     if (stackData.length > 0) {
         const topIdx = stackData.length - 1;
         yield { 
-            snapshot: makeState(`Peeking Top Element: ${stackData[topIdx]}`), 
+            snapshot: makeState(`Peeking Top Element: ${stackData[topIdx]}`, 6), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [topIdx] }], 
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -105,7 +105,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const val = stackData[topIdx];
 
         yield { 
-            snapshot: makeState(`Popping Top Element (${val})...`), 
+            snapshot: makeState(`Popping Top Element (${val})...`, 6), 
             events: [{ type: 'visit', targetIds: ['main'], indices: [topIdx] }], 
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -114,7 +114,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         stackData.pop();
 
         yield { 
-            snapshot: makeState(`Popped ${val}. New Top is ${stackData.length - 1}`), 
+            snapshot: makeState(`Popped ${val}. New Top is ${stackData.length - 1}`, 7), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
@@ -122,13 +122,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     // 4. UNDERFLOW CHECK
     yield { 
-        snapshot: makeState("Stack is Empty. Attempting Pop..."), 
+        snapshot: makeState("Stack is Empty. Attempting Pop...", 5), 
         events: [],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };
 
     yield { 
-        snapshot: makeState("Stack Underflow Error!"), 
+        snapshot: makeState("Stack Underflow Error!", 5), 
         events: [],
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

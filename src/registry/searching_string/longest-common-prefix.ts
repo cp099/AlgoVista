@@ -35,21 +35,21 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     // Helper to visualize state
     // Removed unused hl params
-    const makeState = (currWord: string, msg: string): AlgoState => ({
+    const makeState = (currWord: string, msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'prefix': { type: 'array', id: 'Current Prefix', data: prefix.split('') },
             'word': { type: 'array', id: 'Comparing Against', data: currWord.split('') }
         },
-        context: { variables: { prefix }, pseudocodeLine: 0, message: msg }
+        context: { variables: { prefix }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState(strs[0], "Start: Assume first word is prefix"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState(strs[0], "Start: Assume first word is prefix", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     for (let i = 1; i < strs.length; i++) {
         const word = strs[i];
         
         yield { 
-            snapshot: makeState(word, `Comparing with "${word}"`), 
+            snapshot: makeState(word, `Comparing with "${word}"`, 2), 
             events: [],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
@@ -59,7 +59,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         while (j < prefix.length && j < word.length) {
             comparisons++;
             yield { 
-                snapshot: makeState(word, `Checking char ${j}: ${prefix[j]} vs ${word[j]}`), 
+                snapshot: makeState(word, `Checking char ${j}: ${prefix[j]} vs ${word[j]}`, 3), 
                 events: [
                     { type: 'compare', targetIds: ['Current Prefix'], indices: [j] },
                     { type: 'compare', targetIds: ['Comparing Against'], indices: [j] }
@@ -75,14 +75,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         prefix = prefix.substring(0, j);
         
         yield { 
-            snapshot: makeState(word, `Mismatch! Shortening prefix to "${prefix}"`), 
+            snapshot: makeState(word, `Mismatch! Shortening prefix to "${prefix}"`, 4), 
             events: [{ type: 'write', targetIds: ['Current Prefix'], indices: Array.from({length:prefix.length},(_,k)=>k) }], 
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
 
         if (prefix === "") {
             yield { 
-                snapshot: makeState(word, "Prefix became empty. No common prefix."), 
+                snapshot: makeState(word, "Prefix became empty. No common prefix.", 5), 
                 events: [],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -91,7 +91,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("", `Final Result: "${prefix}"`), 
+        snapshot: makeState("", `Final Result: "${prefix}"`, 6), 
         events: [{ type: 'lock', targetIds: ['Current Prefix'], indices: Array.from({length:prefix.length},(_,k)=>k) }],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

@@ -35,16 +35,16 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const n = arr.length;
     let comparisons = 0, swaps = 0;
 
-    const makeState = (vars: any = {}, msg: string = ''): AlgoState => ({
+    const makeState = (vars: any = {}, msg: string = '', line: number = 0): AlgoState => ({
         structures: { 'main': { type: 'array', id: 'main', data: [...arr] } },
-        context: { variables: { n, ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { n, ...vars }, pseudocodeLine: line, message: msg }
     });
 
     let gap = n;
     const shrink = 1.3;
     let sorted = false;
 
-    yield { snapshot: makeState({ gap }, "Starting Comb Sort"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState({ gap }, "Starting Comb Sort", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     while (!sorted) {
         // Update Gap
@@ -55,7 +55,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
 
         yield { 
-            snapshot: makeState({ gap }, `Gap reduced to ${gap}`), 
+            snapshot: makeState({ gap }, `Gap reduced to ${gap}`, 4), 
             events: [],
             metrics: { comparisons, swaps, writes: 0 }
         };
@@ -63,7 +63,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let i = 0; i < n - gap; i++) {
             comparisons++;
             yield { 
-                snapshot: makeState({ gap, i, j: i+gap }, `Comparing index ${i} and ${i+gap}`), 
+                snapshot: makeState({ gap, i, j: i+gap }, `Comparing index ${i} and ${i+gap}`, 8), 
                 events: [{ type: 'compare', targetIds: ['main'], indices: [i, i+gap] }],
                 metrics: { comparisons, swaps, writes: 0 }
             };
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 sorted = false; // We swapped, so we might not be sorted yet
                 
                 yield { 
-                    snapshot: makeState({ gap, i, j: i+gap }, `Swapping ${arr[i]} and ${arr[i+gap]}`), 
+                    snapshot: makeState({ gap, i, j: i+gap }, `Swapping ${arr[i]} and ${arr[i+gap]}`, 10), 
                     events: [{ type: 'swap', targetIds: ['main'], indices: [i, i+gap] }],
                     metrics: { comparisons, swaps, writes: 0 }
                 };
@@ -83,7 +83,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState({}, "Comb Sort Complete"), 
+        snapshot: makeState({}, "Comb Sort Complete", 4), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes: 0 } 
     };

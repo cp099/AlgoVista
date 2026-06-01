@@ -46,21 +46,21 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     
     const counts = new Array(distinctChars.length).fill(0);
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             's1': { type: 'array', id: 'String 1', data: arr1 },
             's2': { type: 'array', id: 'String 2', data: arr2 },
             // Label the counts array with the characters it represents
             'counts': { type: 'array', id: `Counts (${distinctChars.join('')})`, data: [...counts] }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Anagram Check"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Anagram Check", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     if (s1.length !== s2.length) {
         yield { 
-            snapshot: makeState("Lengths differ! Cannot be anagrams."), 
+            snapshot: makeState("Lengths differ! Cannot be anagrams.", {}, 1), 
             events: [],
             metrics: { comparisons: 1, swaps: 0, writes: 0 } 
         };
@@ -73,14 +73,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const idx = charMap[char];
         
         yield { 
-            snapshot: makeState(`Scanning ${char} from String 1`, { i }), 
+            snapshot: makeState(`Scanning ${char} from String 1`, { i }, 3), 
             events: [{ type: 'visit', targetIds: ['String 1'], indices: [i] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
 
         counts[idx]++;
         yield { 
-            snapshot: makeState(`Incrementing count for ${char}`, { i }), 
+            snapshot: makeState(`Incrementing count for ${char}`, { i }, 3), 
             events: [{ type: 'write', targetIds: [`Counts (${distinctChars.join('')})`], indices: [idx] }],
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
@@ -92,14 +92,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const idx = charMap[char];
 
         yield { 
-            snapshot: makeState(`Scanning ${char} from String 2`, { i }), 
+            snapshot: makeState(`Scanning ${char} from String 2`, { i }, 3), 
             events: [{ type: 'visit', targetIds: ['String 2'], indices: [i] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
 
         counts[idx]--;
         yield { 
-            snapshot: makeState(`Decrementing count for ${char}`, { i }), 
+            snapshot: makeState(`Decrementing count for ${char}`, { i }, 4), 
             events: [{ type: 'write', targetIds: [`Counts (${distinctChars.join('')})`], indices: [idx] }],
             metrics: { comparisons: 0, swaps: 0, writes: 1 } 
         };
@@ -109,7 +109,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     for (let i = 0; i < counts.length; i++) {
         if (counts[i] !== 0) {
             yield { 
-                snapshot: makeState(`Count for ${distinctChars[i]} is not 0!`, { i, val: counts[i] }), 
+                snapshot: makeState(`Count for ${distinctChars[i]} is not 0!`, { i, val: counts[i] }, 5), 
                 events: [{ type: 'compare', targetIds: [`Counts (${distinctChars.join('')})`], indices: [i] }],
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -118,7 +118,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("All counts are zero. It is an Anagram!"), 
+        snapshot: makeState("All counts are zero. It is an Anagram!", {}, 6), 
         events: [
             { type: 'lock', targetIds: ['String 1'], indices: Array.from({length:s1.length},(_,k)=>k) },
             { type: 'lock', targetIds: ['String 2'], indices: Array.from({length:s2.length},(_,k)=>k) }

@@ -52,7 +52,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         };
     };
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         
@@ -75,11 +75,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             structures: { 
                 'main': { type: 'graph', id: 'Circular Linked List', nodes, edges, isDirected: true }
             },
-            context: { variables: { head: head?.val ?? 'null' }, message: msg }
+            context: { variables: { head: head?.val ?? 'null' }, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Initialized Empty List"), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("Initialized Empty List", 1), events: [], metrics: { comparisons, swaps, writes } };
 
     // 1. Build List
     for (const val of sequence) {
@@ -94,11 +94,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             tail = newNode;
         }
         writes++;
-        yield { snapshot: makeState(`Appended ${val}`), events: [], metrics: { comparisons, swaps, writes } };
+        yield { snapshot: makeState(`Appended ${val}`, 4), events: [], metrics: { comparisons, swaps, writes } };
     }
 
     // 2. Animate Traversal
-    yield { snapshot: makeState("Traversal starting from head"), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("Traversal starting from head", 7), events: [], metrics: { comparisons, swaps, writes } };
     
     if (head) {
         let curr = head;
@@ -118,7 +118,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const currIdx = tempNodes.findIndex(n => n.id === String(curr.val));
             
             yield { 
-                snapshot: makeState(`Visiting ${curr.val}`), 
+                snapshot: makeState(`Visiting ${curr.val}`, 8), 
                 events: [{ type: 'visit', targetIds: ['main'], indices: [currIdx] }],
                 metrics: { comparisons, swaps, writes }
             };
@@ -126,7 +126,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         } while (curr !== head);
     }
     
-    yield { snapshot: makeState("Traversal Complete"), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("Traversal Complete", 10), events: [], metrics: { comparisons, swaps, writes } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

@@ -40,19 +40,19 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const m = patArr.length;
     let comparisons = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'text': { type: 'array', id: 'Text', data: textArr },
             'pat': { type: 'array', id: 'Pattern', data: patArr } 
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Naive Search"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Naive Search", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     for (let i = 0; i <= n - m; i++) {
         yield { 
-            snapshot: makeState(`Aligning Pattern at index ${i}`, { i }), 
+            snapshot: makeState(`Aligning Pattern at index ${i}`, { i }, 2), 
             events: [{ type: 'visit', targetIds: ['Text'], indices: [i] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
@@ -61,7 +61,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (j = 0; j < m; j++) {
             comparisons++;
             yield { 
-                snapshot: makeState(`Comparing Text[${i+j}] vs Pattern[${j}]`, { i, j }), 
+                snapshot: makeState(`Comparing Text[${i+j}] vs Pattern[${j}]`, { i, j }, 3), 
                 events: [
                     { type: 'compare', targetIds: ['Text'], indices: [i+j] },
                     { type: 'compare', targetIds: ['Pattern'], indices: [j] }
@@ -71,7 +71,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
             if (textArr[i + j] !== patArr[j]) {
                 yield { 
-                    snapshot: makeState(`Mismatch! Break.`, { i, j }), 
+                    snapshot: makeState(`Mismatch! Break.`, { i, j }, 4), 
                     events: [],
                     metrics: { comparisons, swaps: 0, writes: 0 } 
                 };
@@ -81,7 +81,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         if (j === m) {
             yield { 
-                snapshot: makeState(`Pattern Found at index ${i}!`, { i, result: i }), 
+                snapshot: makeState(`Pattern Found at index ${i}!`, { i, result: i }, 5), 
                 events: [{ type: 'lock', targetIds: ['Text'], indices: Array.from({length: m}, (_, k) => i + k) }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -90,7 +90,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Pattern not found."), 
+        snapshot: makeState("Pattern not found.", {}, 2), 
         events: [], 
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

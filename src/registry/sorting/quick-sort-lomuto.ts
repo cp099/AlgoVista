@@ -117,7 +117,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     yield* quickSort(0, n - 1);
 
     yield { 
-        snapshot: makeState({ i: n }, 6, "Quick Sort Complete."), 
+        snapshot: makeState({ i: n }, 1, "Quick Sort Complete."), 
         events: [{ type: 'lock', targetIds: ['main'], indices: Array.from({length: n}, (_, k) => k) }], 
         metrics: { comparisons, swaps, writes: 0 } 
     };

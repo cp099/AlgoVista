@@ -48,7 +48,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
         if (rootI !== rootJ) parent[rootJ] = rootI;
     };
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const displayEdges = edges.map(e => ({
             ...e,
             // Check if this edge (or its reverse) is in the MST
@@ -63,15 +63,15 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
                 'main': { type: 'graph', id: 'Graph', nodes, edges: displayEdges as any, isDirected: false },
                 'parent': { type: 'array', id: 'Disjoint Set (Parent Array)', data: [...parent], visualMode: 'box' }
             },
-            context: { variables: {}, message: msg }
+            context: { variables: {}, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Initialized"), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("Initialized", 1), events: [], metrics: { comparisons, swaps, writes } };
 
     // 1. Sort Edges
     const sortedEdges = [...edges].sort((a, b) => a.weight! - b.weight!);
-    yield { snapshot: makeState("Edges sorted by weight"), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("Edges sorted by weight", 2), events: [], metrics: { comparisons, swaps, writes } };
 
     // 2. Iterate and build MST
     for (const edge of sortedEdges) {
@@ -80,7 +80,7 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
 
         comparisons++; // The find() check is a comparison
         yield {
-            snapshot: makeState(`Considering edge (${nodes[u].label}, ${nodes[v].label}) with weight ${edge.weight}`),
+            snapshot: makeState(`Considering edge (${nodes[u].label}, ${nodes[v].label}) with weight ${edge.weight}`, 4),
             events: [{ type: 'compare', targetIds: ['main'], indices: [u,v] }],
             metrics: { comparisons, swaps, writes }
         };
@@ -90,20 +90,20 @@ const run: AlgorithmBundle['run'] = function* (_inputs) {
             union(u, v);
             writes++; // Union is a write to the parent array
             yield {
-                snapshot: makeState(`Adding edge. Union(${u}, ${v})`),
+                snapshot: makeState(`Adding edge. Union(${u}, ${v})`, 6),
                 events: [{ type: 'write', targetIds: ['main'], indices: [u,v] }],
                 metrics: { comparisons, swaps, writes }
             };
         } else {
              yield {
-                snapshot: makeState(`Skipping edge. Forms a cycle.`),
+                snapshot: makeState(`Skipping edge. Forms a cycle.`, 4),
                 events: [{ type: 'visit', targetIds: ['main'], indices: [u,v] }],
                 metrics: { comparisons, swaps, writes }
             };
         }
     }
 
-    yield { snapshot: makeState("Kruskal's Complete. MST Found."), events: [], metrics: { comparisons, swaps, writes } };
+    yield { snapshot: makeState("Kruskal's Complete. MST Found.", 1), events: [], metrics: { comparisons, swaps, writes } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

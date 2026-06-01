@@ -50,7 +50,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const startX = 150;
     const yPos = 200;
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         
@@ -74,7 +74,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             structures: { 
                 'main': { type: 'graph', id: 'Linked List', nodes, edges, isDirected: true }
             },
-            context: { variables: { head: head?.val ?? 'null' }, message: msg }
+            context: { variables: { head: head?.val ?? 'null' }, pseudocodeLine: line, message: msg }
         };
     };
 
@@ -131,7 +131,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             };
         }
         else if (op.op === 'mid') {
-            yield { snapshot: makeState(`Inserting ${op.val} after ${op.after}`), events: [], metrics: { comparisons, swaps: 0, writes } };
+            yield { snapshot: makeState(`Inserting ${op.val} after ${op.after}`, 3), events: [], metrics: { comparisons, swaps: 0, writes } };
             let curr = head;
             while(curr && curr.val !== op.after) {
                  comparisons++;
@@ -150,7 +150,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 writes++;
             }
              yield { 
-                snapshot: makeState(`Inserted ${op.val}`), 
+                snapshot: makeState(`Inserted ${op.val}`, 4), 
                 events: [{ type: 'write', targetIds: ['main'], indices: [] }],
                 metrics: { comparisons, swaps: 0, writes }
             };

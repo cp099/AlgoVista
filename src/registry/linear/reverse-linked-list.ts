@@ -50,7 +50,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
     }
 
-    const makeState = (msg: string, vars: { prev?: LLNode|null, current?: LLNode|null, next?: LLNode|null } = {}): AlgoState => {
+    const makeState = (msg: string, vars: { prev?: LLNode|null, current?: LLNode|null, next?: LLNode|null } = {}, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         const edges: GraphEdge[] = [];
         
@@ -84,11 +84,11 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         return {
             structures: { 'main': { type: 'graph', id: 'Linked List', nodes, edges, isDirected: true } },
-            context: { variables: {}, message: msg }
+            context: { variables: {}, pseudocodeLine: line, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Initial List"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Initial List", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // REVERSAL LOGIC
     let prev: LLNode | null = null;
@@ -106,7 +106,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         current.next = prev;
         
         yield { 
-            snapshot: makeState(`Rewiring: current.next -> prev`, { prev, current, next }), 
+            snapshot: makeState(`Rewiring: current.next -> prev`, { prev, current, next }, 5), 
             events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
         
@@ -115,14 +115,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         current = next;
 
         yield { 
-            snapshot: makeState(`Shifting pointers forward`, { prev, current, next }), 
+            snapshot: makeState(`Shifting pointers forward`, { prev, current, next }, 6), 
             events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
     }
     
     head = prev; // New head is the old tail
 
-    yield { snapshot: makeState("Reversal Complete"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Reversal Complete", {}, 8), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

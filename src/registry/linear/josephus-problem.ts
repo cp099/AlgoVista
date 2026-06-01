@@ -46,7 +46,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         return { x: 400 + 150 * Math.cos(angle), y: 250 + 150 * Math.sin(angle) };
     };
 
-    const makeState = (msg: string): AlgoState => {
+    const makeState = (msg: string, line: number = 0): AlgoState => {
         const nodes: GraphNode[] = [];
         // Draw living people
         people.forEach((person, i) => {
@@ -58,17 +58,17 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             structures: { 
                 'main': { type: 'graph', id: 'Circle', nodes, edges: [], isDirected: false }
             },
-            context: { variables: { n, k, remaining: people.length }, message: msg }
+            context: { pseudocodeLine: line, variables: { n, k, remaining: people.length }, message: msg }
         };
     };
 
-    yield { snapshot: makeState("Starting Josephus Problem"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Josephus Problem", 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     let currentIdx = 0;
     while (people.length > 1) {
         
         yield { 
-            snapshot: makeState(`Counting ${k} steps from index ${currentIdx}...`), 
+            snapshot: makeState(`Counting ${k} steps from index ${currentIdx}...`, 3), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -78,7 +78,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let i = 0; i < steps; i++) {
              currentIdx = (currentIdx + 1) % people.length;
              yield { 
-                snapshot: makeState(`Count ${i+1}... at ${people[currentIdx]}`), 
+                snapshot: makeState(`Count ${i+1}... at ${people[currentIdx]}`, 3), 
                 events: [{ type: 'visit', targetIds: ['main'], indices: [] }], // Highlight current
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
              };
@@ -87,7 +87,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const personToEliminate = people[currentIdx];
         
         yield { 
-            snapshot: makeState(`Eliminating person ${personToEliminate}`), 
+            snapshot: makeState(`Eliminating person ${personToEliminate}`, 4), 
             events: [{ type: 'compare', targetIds: ['main'], indices: [] }], // Red flash on target
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -103,7 +103,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         }
 
         yield { 
-            snapshot: makeState(`Person ${personToEliminate} removed. ${people.length} remain.`), 
+            snapshot: makeState(`Person ${personToEliminate} removed. ${people.length} remain.`, 5), 
             events: [],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -111,7 +111,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     const survivor = people[0];
     yield { 
-        snapshot: makeState(`Survivor is ${survivor}!`), 
+        snapshot: makeState(`Survivor is ${survivor}!`, 6), 
         events: [{ type: 'lock', targetIds: ['main'], indices: [] }], 
         metrics: { comparisons: 0, swaps: 0, writes: 0 } 
     };

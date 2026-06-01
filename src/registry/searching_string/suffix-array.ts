@@ -37,7 +37,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         text: str.substring(i)
     }));
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'sa': { 
                 type: 'array', 
@@ -46,10 +46,10 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
                 data: suffixes.map(s => s.text) 
             }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Initialized Suffixes"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Initialized Suffixes", {}, 3), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // We will simulate a Selection Sort for visualization clarity
     // (Real construction is O(n log n) or O(n), but Selection Sort is O(n^2) visualizable)
@@ -57,7 +57,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         let minIdx = i;
         
         yield { 
-            snapshot: makeState(`Finding min suffix starting at index ${i}`, { i }), 
+            snapshot: makeState(`Finding min suffix starting at index ${i}`, { i }, 4), 
             events: [{ type: 'visit', targetIds: ['Suffixes (Sorted by Text)'], indices: [i] }],
             metrics: { comparisons, swaps, writes: 0 } 
         };
@@ -65,7 +65,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         for (let j = i + 1; j < n; j++) {
             comparisons++;
             yield { 
-                snapshot: makeState(`Comparing "${suffixes[j].text}" < "${suffixes[minIdx].text}"?`, { i, j }), 
+                snapshot: makeState(`Comparing "${suffixes[j].text}" < "${suffixes[minIdx].text}"?`, { i, j }, 4), 
                 events: [{ type: 'compare', targetIds: ['Suffixes (Sorted by Text)'], indices: [j, minIdx] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
@@ -73,7 +73,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             if (suffixes[j].text < suffixes[minIdx].text) {
                 minIdx = j;
                 yield { 
-                    snapshot: makeState(`New minimum found: "${suffixes[j].text}"`, { i, j, minIdx }), 
+                    snapshot: makeState(`New minimum found: "${suffixes[j].text}"`, { i, j, minIdx }, 4), 
                     events: [{ type: 'visit', targetIds: ['Suffixes (Sorted by Text)'], indices: [minIdx] }],
                     metrics: { comparisons, swaps, writes: 0 } 
                 };
@@ -86,21 +86,21 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             suffixes[minIdx] = temp;
             swaps++;
             yield { 
-                snapshot: makeState(`Swapping "${suffixes[i].text}" into position`, { i, minIdx }), 
+                snapshot: makeState(`Swapping "${suffixes[i].text}" into position`, { i, minIdx }, 4), 
                 events: [{ type: 'swap', targetIds: ['Suffixes (Sorted by Text)'], indices: [i, minIdx] }],
                 metrics: { comparisons, swaps, writes: 0 } 
             };
         }
         
         yield { 
-            snapshot: makeState(`Position ${i} Sorted`, { i }), 
+            snapshot: makeState(`Position ${i} Sorted`, { i }, 4), 
             events: [{ type: 'lock', targetIds: ['Suffixes (Sorted by Text)'], indices: [i] }],
             metrics: { comparisons, swaps, writes: 0 } 
         };
     }
 
     yield { 
-        snapshot: makeState("Suffix Array Construction Complete"), 
+        snapshot: makeState("Suffix Array Construction Complete", {}, 5), 
         events: [{ type: 'lock', targetIds: ['Suffixes (Sorted by Text)'], indices: Array.from({length:n},(_,k)=>k) }],
         metrics: { comparisons, swaps, writes: 0 } 
     };

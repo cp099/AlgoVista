@@ -73,14 +73,14 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         nodes.push({ id: node.id, val: freq, label: `${char}:${freq}`, x: node.x, y: node.y });
     });
 
-    const makeState = (msg: string): AlgoState => ({
+    const makeState = (msg: string, line: number = 0): AlgoState => ({
         structures: { 
             'tree': { type: 'graph', id: 'Huffman Forest', nodes: [...nodes], edges: [...edges], isDirected: true }
         },
-        context: { variables: {}, pseudocodeLine: 0, message: msg }
+        context: { variables: {}, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Initialized Leaf Nodes (Char:Freq)"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Initialized Leaf Nodes (Char:Freq)", 3), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 3. Build Tree
     while (hNodes.length > 1) {
@@ -91,7 +91,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         const right = hNodes.shift()!;
 
         yield { 
-            snapshot: makeState(`Merging '${left.char || 'node'}' (${left.freq}) and '${right.char || 'node'}' (${right.freq})`), 
+            snapshot: makeState(`Merging '${left.char || 'node'}' (${left.freq}) and '${right.char || 'node'}' (${right.freq})`, 4), 
             events: [
                 { type: 'compare', targetIds: ['Huffman Forest'], indices: [parseInt(left.id.slice(1))] },
                 { type: 'compare', targetIds: ['Huffman Forest'], indices: [parseInt(right.id.slice(1))] }
@@ -115,13 +115,13 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         edges.push({ source: parent.id, target: right.id });
 
         yield { 
-            snapshot: makeState(`Created Parent Node (${parent.freq})`), 
+            snapshot: makeState(`Created Parent Node (${parent.freq})`, 7), 
             events: [{ type: 'write', targetIds: ['Huffman Forest'], indices: [parseInt(parent.id.slice(1))] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
     }
 
-    yield { snapshot: makeState("Huffman Tree Complete"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Huffman Tree Complete", 10), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 };
 
 const bundle: AlgorithmBundle = { manifest, run };

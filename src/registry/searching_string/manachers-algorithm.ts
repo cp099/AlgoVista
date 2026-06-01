@@ -37,21 +37,21 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     let R = 0; // Right Boundary
     let comparisons = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'T': { type: 'array', id: 'Transformed String', data: T },
             'P': { type: 'array', id: 'P-Array (Radius)', data: [...P] }
         },
-        context: { variables: { ...vars, C, R }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars, C, R }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Manacher's"), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Manacher's", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     for (let i = 0; i < n; i++) {
         const mirror = 2 * C - i;
         
         yield { 
-            snapshot: makeState(`Processing index ${i} (Mirror: ${mirror})`, { i, mirror }), 
+            snapshot: makeState(`Processing index ${i} (Mirror: ${mirror})`, { i, mirror }, 3), 
             events: [{ type: 'visit', targetIds: ['Transformed String'], indices: [i] }],
             metrics: { comparisons: 0, swaps: 0, writes: 0 } 
         };
@@ -59,7 +59,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         if (i < R) {
             P[i] = Math.min(R - i, P[mirror]);
             yield { 
-                snapshot: makeState(`Using mirror property: P[${i}] = ${P[i]}`, { i, mirror }), 
+                snapshot: makeState(`Using mirror property: P[${i}] = ${P[i]}`, { i, mirror }, 5), 
                 events: [{ type: 'write', targetIds: ['P-Array (Radius)'], indices: [i] }],
                 metrics: { comparisons: 0, swaps: 0, writes: 0 } 
             };
@@ -73,7 +73,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         ) {
             comparisons++;
             yield { 
-                snapshot: makeState(`Expanding: Match at dist ${P[i]+1}`, { i }), 
+                snapshot: makeState(`Expanding: Match at dist ${P[i]+1}`, { i }, 6), 
                 events: [
                     { type: 'compare', targetIds: ['Transformed String'], indices: [i - (P[i] + 1)] },
                     { type: 'compare', targetIds: ['Transformed String'], indices: [i + (P[i] + 1)] }
@@ -83,7 +83,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             P[i]++;
             
             yield { 
-                snapshot: makeState(`Radius updated: P[${i}] = ${P[i]}`, { i }), 
+                snapshot: makeState(`Radius updated: P[${i}] = ${P[i]}`, { i }, 6), 
                 events: [{ type: 'write', targetIds: ['P-Array (Radius)'], indices: [i] }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -102,7 +102,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Manacher's Complete"), 
+        snapshot: makeState("Manacher's Complete", {}, 7), 
         events: [],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };

@@ -42,15 +42,15 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     const m = patArr.length;
     let comparisons = 0;
 
-    const makeState = (msg: string, vars: any = {}): AlgoState => ({
+    const makeState = (msg: string, vars: any = {}, line: number = 0): AlgoState => ({
         structures: { 
             'text': { type: 'array', id: 'Text', data: textArr },
             'pat': { type: 'array', id: 'Pattern', data: patArr }
         },
-        context: { variables: { ...vars }, pseudocodeLine: 0, message: msg }
+        context: { variables: { ...vars }, pseudocodeLine: line, message: msg }
     });
 
-    yield { snapshot: makeState("Starting Boyer-Moore. Building Bad Char Table..."), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
+    yield { snapshot: makeState("Starting Boyer-Moore. Building Bad Char Table...", {}, 1), events: [], metrics: { comparisons: 0, swaps: 0, writes: 0 } };
 
     // 1. Bad Character Heuristic
     const badChar: Record<string, number> = {};
@@ -62,7 +62,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
     while (s <= n - m) {
         yield { 
-            snapshot: makeState(`Aligning Pattern at index ${s}`, { s }), 
+            snapshot: makeState(`Aligning Pattern at index ${s}`, { s }, 2), 
             events: [{ type: 'visit', targetIds: ['Text'], indices: [s] }],
             metrics: { comparisons, swaps: 0, writes: 0 } 
         };
@@ -73,7 +73,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
         while (j >= 0 && patArr[j] === textArr[s + j]) {
             comparisons++;
             yield { 
-                snapshot: makeState(`Matching T[${s+j}] == P[${j}]`, { s, j }), 
+                snapshot: makeState(`Matching T[${s+j}] == P[${j}]`, { s, j }, 5), 
                 events: [
                     { type: 'compare', targetIds: ['Text'], indices: [s+j] },
                     { type: 'compare', targetIds: ['Pattern'], indices: [j] }
@@ -85,7 +85,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
 
         if (j < 0) {
             yield { 
-                snapshot: makeState(`Pattern Found at index ${s}!`, { result: s }), 
+                snapshot: makeState(`Pattern Found at index ${s}!`, { result: s }, 6), 
                 events: [{ type: 'lock', targetIds: ['Text'], indices: Array.from({length: m}, (_, k) => s + k) }],
                 metrics: { comparisons, swaps: 0, writes: 0 } 
             };
@@ -99,7 +99,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
             const shift = Math.max(1, j - lastPos);
             
             yield { 
-                snapshot: makeState(`Mismatch at P[${j}] (${patArr[j]}) vs T[${s+j}] (${charCode}). Shift by ${shift}`, { s, j, shift }), 
+                snapshot: makeState(`Mismatch at P[${j}] (${patArr[j]}) vs T[${s+j}] (${charCode}). Shift by ${shift}`, { s, j, shift }, 7), 
                 events: [
                     { type: 'compare', targetIds: ['Text'], indices: [s+j] }, // Highlight mismatch
                     { type: 'compare', targetIds: ['Pattern'], indices: [j] }
@@ -112,7 +112,7 @@ const run: AlgorithmBundle['run'] = function* (inputs) {
     }
 
     yield { 
-        snapshot: makeState("Search Complete"), 
+        snapshot: makeState("Search Complete", {}, 3), 
         events: [],
         metrics: { comparisons, swaps: 0, writes: 0 } 
     };
