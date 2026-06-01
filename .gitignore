@@ -36,3 +36,6 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Test automation and scratch scripts
+scratch/
