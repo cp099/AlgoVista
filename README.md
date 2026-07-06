@@ -38,6 +38,21 @@ AlgoVista has been upgraded with a top-of-the-line interactive suite designed to
 
 ---
 
+## Interactive Suites & Algorithmic Coverage
+
+AlgoVista covers 8 distinct conceptual suites containing over 80+ visual sandboxes:
+
+1.  **Sorting Suite (Orange)**: Arranging data in ordered sequences. Supports Bubble, Selection, Insertion, Merge, Quick, Heap, Radix, Shell, Bogo, Gnome, and Cocktail Sorts.
+2.  **Graph Suite (Purple)**: Pathfinding and node topology visualizers. Covers BFS, DFS, Dijkstra, Bellman-Ford, A*, Floyd-Warshall, Prim, Kruskal, topological sorts, and Kosaraju's Strongly Connected Components.
+3.  **Searching & String Suite (Blue)**: Value indexing and pattern matching. Features Binary Search, KMP, Rabin-Karp, Boyer-Moore, Aho-Corasick, Z-Algorithm, and Suffix Automata.
+4.  **Linear Data Structures Suite (Indigo)**: Sequential memory tracks and queue pipelines. Renders Singly/Doubly Linked Lists, Queue, Circular Queue, Min/Max Stacks, and Deques.
+5.  **Bioinformatics & Sequence Alignment Suite (Teal)**: Genetic sequencing. Features Needleman-Wunsch, Smith-Waterman, Nussinov RNA Folding, BLAST search, Eulerian/Hamiltonian Assemblies, Fitch/Sankoff Parsimony, FM-Index, BWT, and Viterbi HMM.
+6.  **Dynamic Programming & Greedy Suite (Red)**: Memoization tables and fractional choices. Includes LCS, LIS, Matrix Chain Multiplication, Edit Distance, Subset Sum, Fractional Knapsack, Huffman coding, and Activity Selection.
+7.  **Mathematics & Computational Geometry Suite (Green)**: Curves and spatial calculations. Renders Bezier curves, Convex Hull (Jarvis March & Graham Scan), FFT, Prime Sieve, Gradient Descent, Voronoi diagrams, and Point-in-Polygon checks.
+8.  **Trees & Hierarchical Structures Suite (Rose)**: Branching hierarchies. Visualizes BST, AVL, Red-Black, B-Tree, Segment Tree, Fenwick Tree, Trie, Splay Tree, Treap, KD-Tree, and LCA.
+
+---
+
 ## Architecture
 
 AlgoVista runs entirely in the browser using React, TypeScript, and Vite. The design is structured for modularity and rapid expansion:
