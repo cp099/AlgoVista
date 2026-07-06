@@ -11,12 +11,75 @@ interface Array1DProps {
   baseColor?: string;
   orientation?: 'horizontal' | 'vertical';
   visualMode?: 'bar' | 'box';
+  variables?: Record<string, unknown>;
 }
+
+const getEventTypeOfIndex = (index: number, activeEvents: AlgoEvent[]): 'default' | 'compare' | 'swap' | 'visit' | 'lock' | 'write' => {
+  for (const event of activeEvents) {
+    if (event.indices?.includes(index)) {
+      if (event.type === 'compare') return 'compare';
+      if (event.type === 'swap') return 'swap';
+      if (event.type === 'visit') return 'visit';
+      if (event.type === 'lock') return 'lock';
+      if (event.type === 'write') return 'write';
+    }
+  }
+  return 'default';
+};
+
+const getNodeStyleClasses = (type: 'default' | 'compare' | 'swap' | 'visit' | 'lock' | 'write', nodeStyle: string) => {
+  if (nodeStyle === 'contrast') {
+    switch (type) {
+      case 'default':
+        return { rect: 'fill-white stroke-slate-900 stroke-[3px]', text: 'fill-slate-900 font-extrabold' };
+      default: // Any active highlight
+        return { rect: 'fill-slate-900 stroke-slate-900 stroke-[3px]', text: 'fill-white font-extrabold' };
+    }
+  } else if (nodeStyle === 'slate') {
+    switch (type) {
+      case 'default':
+        return { rect: 'fill-slate-50 stroke-slate-200 stroke-[1.5px]', text: 'fill-slate-700 font-medium' };
+      case 'compare':
+        return { rect: 'fill-amber-50 stroke-amber-500 stroke-[1.5px]', text: 'fill-amber-800 font-semibold' };
+      case 'swap':
+        return { rect: 'fill-red-50 stroke-red-500 stroke-[1.5px]', text: 'fill-red-800 font-semibold' };
+      case 'visit':
+      case 'write':
+        return { rect: 'fill-purple-50 stroke-purple-500 stroke-[1.5px]', text: 'fill-purple-800 font-semibold' };
+      case 'lock':
+        return { rect: 'fill-emerald-50 stroke-emerald-500 stroke-[1.5px]', text: 'fill-emerald-800 font-semibold' };
+    }
+  } else {
+    // neon (glows)
+    switch (type) {
+      case 'default':
+        return { rect: 'fill-algo-surface stroke-algo-primary stroke-[1.5px]', text: 'fill-algo-text font-semibold' };
+      case 'compare':
+        return { rect: 'fill-algo-accent/15 stroke-algo-accent stroke-[1.5px]', text: 'fill-algo-accent font-bold' };
+      case 'swap':
+        return { rect: 'fill-red-500/15 stroke-red-500 stroke-[1.5px]', text: 'fill-red-500 font-bold' };
+      case 'visit':
+      case 'write':
+        return { rect: 'fill-purple-500/15 stroke-purple-500 stroke-[1.5px]', text: 'fill-purple-400 font-bold' };
+      case 'lock':
+        return { rect: 'fill-algo-success/15 stroke-algo-success stroke-[1.5px]', text: 'fill-algo-success font-bold' };
+    }
+  }
+};
+
+const getGlowFilter = (type: string, nodeStyle: string) => {
+  if (nodeStyle !== 'neon') return undefined;
+  if (type === 'compare') return 'url(#glow-accent)';
+  if (type === 'swap') return 'url(#glow-accent)'; // soft warm glow
+  if (type === 'visit' || type === 'write' || type === 'lock') return 'url(#glow-success)';
+  return 'url(#glow-primary)';
+};
 
 export const Array1D: React.FC<Array1DProps> = ({ 
     data, activeEvents, width, height, baseColor, 
     orientation = 'horizontal',
-    visualMode
+    visualMode,
+    variables
 }) => {
   const { settings } = useSettings();
   const nodeStyle = settings.nodeStyle;
@@ -29,12 +92,25 @@ export const Array1D: React.FC<Array1DProps> = ({
   
   const isVertical = orientation === 'vertical';
 
+  // --- Collect pointer variables mapping to index for floating arrows ---
+  const pointerTagsByIndex: Record<number, string[]> = {};
+  if (variables) {
+    Object.entries(variables).forEach(([k, v]) => {
+      if (typeof v === 'number' && v >= 0 && v < len) {
+        const lowerKey = k.toLowerCase();
+        if (['low', 'high', 'mid', 'left', 'right', 'i', 'j', 'pivot', 'p', 'q', 'k', 'front', 'rear', 'head', 'tail'].includes(lowerKey)) {
+          if (!pointerTagsByIndex[v]) pointerTagsByIndex[v] = [];
+          pointerTagsByIndex[v].push(k);
+        }
+      }
+    });
+  }
+
   // --- VERTICAL STACK MODE ---
   if (isVertical) {
       const boxHeight = 50;
       const gap = 4;
       
-      // Calculate total height to center the block
       const totalHeight = len * (boxHeight + gap) - gap;
       const startY = (height - totalHeight) / 2;
 
@@ -49,25 +125,15 @@ export const Array1D: React.FC<Array1DProps> = ({
                 rx={8}
                 fill="none" 
                 stroke="currentColor" 
-                strokeWidth={nodeStyle === 'contrast' ? '3' : '2'} 
+                strokeWidth={nodeStyle === 'contrast' ? '3' : '1.5'} 
                 className="text-algo-border opacity-50"
             />
 
             {data.map((val, i) => {
-                // Stack grows UP from the bottom, but the whole group is centered
                 const y = startY + (totalHeight - (i + 1) * (boxHeight + gap) + gap);
                 const x = width / 2 - 30;
-                let colorClass = "fill-algo-surface stroke-algo-primary stroke-2";
-                
-                for (const event of activeEvents) {
-                    if (event.indices?.includes(i)) {
-                        if (event.type === 'visit') colorClass = "fill-purple-500 stroke-purple-500";
-                        if (event.type === 'write') colorClass = "fill-algo-success stroke-algo-success";
-                        if (event.type === 'compare') colorClass = "fill-algo-accent stroke-algo-accent";
-                    }
-                }
-
-                const isAccent = colorClass.includes('accent') || colorClass.includes('success') || colorClass.includes('purple');
+                const eventType = getEventTypeOfIndex(i, activeEvents);
+                const style = getNodeStyleClasses(eventType, nodeStyle);
 
                 return (
                     <g key={i} transform={`translate(${x}, ${y})`}>
@@ -75,15 +141,11 @@ export const Array1D: React.FC<Array1DProps> = ({
                             width={60} 
                             height={boxHeight} 
                             rx={6} 
-                            className={cn(
-                                "transition-all duration-150", 
-                                colorClass,
-                                nodeStyle === 'contrast' && "stroke-[3px]",
-                                nodeStyle === 'neon' && isAccent && "drop-shadow-[0_0_5px_rgba(99,102,241,0.35)]"
-                            )} 
+                            className={cn("transition-all duration-150", style.rect)} 
+                            filter={getGlowFilter(eventType, nodeStyle)}
                         />
-                        <text x={30} y={30} textAnchor="middle" className="fill-algo-text font-mono font-bold text-lg select-none">{val}</text>
-                        {i === len - 1 && <text x={90} y={30} className="fill-algo-accent text-xs font-mono">TOP</text>}
+                        <text x={30} y={30} textAnchor="middle" className={cn("font-mono font-bold text-lg select-none", style.text)}>{val}</text>
+                        {i === len - 1 && <text x={90} y={30} className="fill-algo-accent text-xs font-mono font-bold">TOP</text>}
                     </g>
                 );
             })}
@@ -100,19 +162,8 @@ export const Array1D: React.FC<Array1DProps> = ({
         <g className="transition-all duration-300">
             {data.map((val, i) => {
                 const y = i * rowHeight;
-                let colorClass = "fill-transparent"; 
-                let textClass = "fill-algo-text";
-                
-                for (const event of activeEvents) {
-                    if (event.indices?.includes(i)) {
-                        if (event.type === 'compare') { colorClass = "fill-algo-accent"; textClass = "fill-white"; }
-                        if (event.type === 'swap') { colorClass = "fill-red-500"; textClass = "fill-white"; }
-                        if (event.type === 'visit') { colorClass = "fill-purple-500"; textClass = "fill-white"; }
-                        if (event.type === 'lock') { colorClass = "fill-algo-success"; textClass = "fill-white"; }
-                    }
-                }
-
-                const isActive = colorClass !== "fill-transparent";
+                const eventType = getEventTypeOfIndex(i, activeEvents);
+                const style = getNodeStyleClasses(eventType, nodeStyle);
 
                 return (
                     <g key={i} transform={`translate(0, ${y})`}>
@@ -122,15 +173,11 @@ export const Array1D: React.FC<Array1DProps> = ({
                             width={width} 
                             height={rowHeight - 4} 
                             rx={4} 
-                            className={cn(
-                                "transition-all duration-150",
-                                nodeStyle === 'contrast' ? "stroke-algo-text stroke-2" : "stroke-algo-border stroke-1",
-                                nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_4px_rgba(99,102,241,0.25)]",
-                                colorClass
-                            )} 
+                            className={cn("transition-all duration-150", style.rect)} 
+                            filter={getGlowFilter(eventType, nodeStyle)}
                         />
-                        <text x={20} y={rowHeight / 2 + 5} className={cn("font-mono text-xs opacity-50", textClass)}>{i}</text>
-                        <text x={width / 2} y={rowHeight / 2 + 5} textAnchor="middle" className={cn("font-mono font-bold select-none", textClass)} style={{ fontSize: `${fontSize}px` }}>{val}</text>
+                        <text x={20} y={rowHeight / 2 + 5} className={cn("font-mono text-xs opacity-50", style.text)}>{i}</text>
+                        <text x={width / 2} y={rowHeight / 2 + 5} textAnchor="middle" className={cn("font-mono font-bold select-none", style.text)} style={{ fontSize: `${fontSize}px` }}>{val}</text>
                     </g>
                 );
             })}
@@ -146,16 +193,25 @@ export const Array1D: React.FC<Array1DProps> = ({
   const drawingHeight = height - labelHeight; 
 
   const getBarColor = (index: number) => {
-    for (const event of activeEvents) {
-      if (event.indices?.includes(index)) {
-        if (event.type === 'compare') return 'fill-algo-accent'; 
-        if (event.type === 'swap') return 'fill-red-500';      
-        if (event.type === 'write') return 'fill-purple-500';  
-        if (event.type === 'lock') return 'fill-algo-success'; 
-        if (event.type === 'visit') return 'fill-red-500'; 
-      }
+    const type = getEventTypeOfIndex(index, activeEvents);
+    if (type !== 'default') {
+      if (type === 'compare') return nodeStyle === 'contrast' ? 'fill-slate-900 stroke-slate-900' : 'fill-algo-accent'; 
+      if (type === 'swap') return 'fill-red-500';      
+      if (type === 'write') return 'fill-purple-500';  
+      if (type === 'lock') return 'fill-[#34c759]'; // Soft emerald green
+      if (type === 'visit') return 'fill-purple-500'; 
     }
-    return baseColor || (isStringData ? 'fill-algo-surface stroke-algo-border stroke-2' : 'fill-algo-primary'); 
+    
+    if (baseColor) return baseColor;
+    if (isStringData) {
+      if (nodeStyle === 'contrast') return 'fill-white stroke-slate-900';
+      if (nodeStyle === 'slate') return 'fill-slate-50 stroke-slate-200';
+      return 'fill-algo-surface stroke-algo-border';
+    } else {
+      if (nodeStyle === 'contrast') return 'fill-slate-900';
+      if (nodeStyle === 'slate') return 'fill-slate-200'; // light gray
+      return 'fill-[#0071e3]'; // premium soft blue instead of neon primary
+    }
   };
 
   return (
@@ -175,7 +231,9 @@ export const Array1D: React.FC<Array1DProps> = ({
                 const finalX = startX + i * (preferredSize + spacing);
                 const finalY = (drawingHeight - preferredSize) / 2;
                 const barCol = getBarColor(i);
-                const isActive = !barCol.includes('fill-algo-surface');
+                const eventType = getEventTypeOfIndex(i, activeEvents);
+                const style = getNodeStyleClasses(eventType, nodeStyle);
+                const tags = pointerTagsByIndex[i];
 
                 return (
                     <g key={i} transform={`translate(${finalX}, 0)`}>
@@ -186,13 +244,21 @@ export const Array1D: React.FC<Array1DProps> = ({
                             rx={6} 
                             className={cn(
                                 "transition-all duration-150", 
-                                nodeStyle === 'contrast' && "stroke-[3px]",
-                                nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_5px_rgba(99,102,241,0.3)]",
-                                barCol
+                                barCol,
+                                nodeStyle === 'contrast' ? "stroke-slate-900 stroke-[3px]" : "stroke-[1.5px]"
                             )} 
+                            filter={getGlowFilter(eventType, nodeStyle)}
                         />
-                        <text x={preferredSize/2} y={finalY + preferredSize/2 + 5} textAnchor="middle" className={cn("font-mono font-bold select-none text-xl", barCol.includes('fill-algo-surface') ? "fill-algo-text" : "fill-white")}>{val}</text>
-                        <text x={preferredSize/2} y={height - 5} textAnchor="middle" className="fill-algo-muted text-[10px] font-mono">{i}</text>
+                        <text x={preferredSize/2} y={finalY + preferredSize/2 + 5} textAnchor="middle" className={cn("font-mono font-bold select-none text-base", style.text)}>{val}</text>
+                        
+                        {/* Render Floating Variable Pointers below box */}
+                        {tags && tags.length > 0 ? (
+                            <text x={preferredSize/2} y={finalY + preferredSize + 22} textAnchor="middle" className="fill-indigo-500 font-semibold text-[9px] uppercase tracking-wider animate-pulse">
+                              ↑ {tags.join(', ')}
+                            </text>
+                        ) : (
+                            <text x={preferredSize/2} y={height - 5} textAnchor="middle" className="fill-slate-400 text-[10px] font-mono">{i}</text>
+                        )}
                     </g>
                 );
             } else {
@@ -202,7 +268,9 @@ export const Array1D: React.FC<Array1DProps> = ({
                 const finalX = i * (dynamicWidth + dynamicGap);
                 const finalY = (drawingHeight - dynamicSize) / 2;
                 const barCol = getBarColor(i);
-                const isActive = !barCol.includes('fill-algo-surface');
+                const eventType = getEventTypeOfIndex(i, activeEvents);
+                const style = getNodeStyleClasses(eventType, nodeStyle);
+                const tags = pointerTagsByIndex[i];
 
                 return (
                     <g key={i} transform={`translate(${finalX}, 0)`}>
@@ -213,28 +281,37 @@ export const Array1D: React.FC<Array1DProps> = ({
                             rx={4} 
                             className={cn(
                                 "transition-all duration-150", 
-                                nodeStyle === 'contrast' && "stroke-[2.5px]",
-                                nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_4px_rgba(99,102,241,0.3)]",
-                                barCol
+                                barCol,
+                                nodeStyle === 'contrast' ? "stroke-slate-900 stroke-[3px]" : "stroke-[1.5px]"
                             )} 
+                            filter={getGlowFilter(eventType, nodeStyle)}
                         />
                         {dynamicSize > 12 && (
-                            <text x={dynamicSize/2} y={finalY + dynamicSize/2 + 4} textAnchor="middle" className={cn("font-mono font-bold select-none", barCol.includes('fill-algo-surface') ? "fill-algo-text" : "fill-white")} style={{ fontSize: `${dynamicSize * 0.5}px` }}>{val}</text>
+                            <text x={dynamicSize/2} y={finalY + dynamicSize/2 + 4} textAnchor="middle" className={cn("font-mono font-bold select-none", style.text)} style={{ fontSize: `${dynamicSize * 0.5}px` }}>{val}</text>
                         )}
-                        {dynamicSize > 20 && (
-                            <text x={dynamicSize/2} y={height - 5} textAnchor="middle" className="fill-algo-muted text-[10px] font-mono">{i}</text>
+                        
+                        {/* Render Floating Variable Pointers below box */}
+                        {tags && tags.length > 0 ? (
+                            <text x={dynamicSize/2} y={finalY + dynamicSize + 18} textAnchor="middle" className="fill-indigo-500 font-semibold text-[8px] uppercase tracking-wider animate-pulse">
+                              ↑ {tags.join(', ')}
+                            </text>
+                        ) : (
+                            dynamicSize > 20 && (
+                                <text x={dynamicSize/2} y={height - 5} textAnchor="middle" className="fill-slate-400 text-[9px] font-mono">{i}</text>
+                            )
                         )}
                     </g>
                 );
             }
         } else {
             // --- BAR MODE ---
-            let pct = (val as number) / maxVal;
+            const pct = (val as number) / maxVal;
             barHeight = pct * drawingHeight;
             barHeight = Math.max(barHeight, isCompact ? 2 : 5);
             y = drawingHeight - barHeight;
             const barCol = getBarColor(i);
-            const isActive = barCol !== 'fill-algo-primary';
+            const eventType = getEventTypeOfIndex(i, activeEvents);
+            const tags = pointerTagsByIndex[i];
 
             return (
                 <g key={i} transform={`translate(${x}, 0)`}>
@@ -245,13 +322,19 @@ export const Array1D: React.FC<Array1DProps> = ({
                         rx={isCompact ? 1 : 4} 
                         className={cn(
                             "transition-all duration-150", 
-                            nodeStyle === 'contrast' && "stroke-[2.5px]",
-                            nodeStyle === 'neon' && isActive && "drop-shadow-[0_0_6px_rgba(99,102,241,0.3)]",
-                            barCol
+                            barCol,
+                            nodeStyle === 'contrast' ? "stroke-slate-900 stroke-[2px]" : "stroke-transparent stroke-0"
                         )} 
+                        filter={getGlowFilter(eventType, nodeStyle)}
                     />
                     {barWidth > 12 && (
-                        <text x={barWidth / 2} y={height - 10} textAnchor="middle" className="fill-algo-text font-mono font-bold select-none" style={{ fontSize: isCompact ? '10px' : '12px' }}>{val}</text>
+                        tags && tags.length > 0 ? (
+                          <text x={barWidth / 2} y={height - 5} textAnchor="middle" className="fill-indigo-500 font-bold select-none text-[8px] uppercase tracking-tight">
+                            ↑ {tags.join(', ')}
+                          </text>
+                        ) : (
+                          <text x={barWidth / 2} y={height - 10} textAnchor="middle" className="fill-slate-500 font-mono font-bold select-none" style={{ fontSize: isCompact ? '10px' : '12px' }}>{val}</text>
+                        )
                     )}
                 </g>
             );
