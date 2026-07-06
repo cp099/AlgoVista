@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,40 +6,39 @@
 
 @layer base {
   :root {
-    /* LIGHT MODE (High Fidelity Professional Slate & Indigo) */
-    --color-bg: #f1f5f9; /* Rich soft slate background for solid card contrast */
-    --color-surface: #ffffff; /* Solid white card bodies */
-    --color-surface-hover: #f8fafc; /* Card hover background */
-    --color-border: #e2e8f0; /* Crisp Slate-200 border lines */
-    --color-text-main: #0f172a; /* Slate-900 headers */
-    --color-text-muted: #334155; /* Slate-700 body copy */
-    --color-primary: #4f46e5; /* Indigo-600 action brand */
-    --color-primary-light: rgba(79, 70, 229, 0.08); /* Indigo soft tint */
-    --color-accent: #d97706; /* Amber accent */
-    --color-success: #059669; /* Emerald success */
-    --color-glow: rgba(79, 70, 229, 0.12); /* Subtle glow shadow */
+    /* APPLE/GOOGLE PREMIUM NEUTRAL PALETTE */
+    --color-bg: #f5f5f7; /* Apple signature soft off-white background */
+    --color-surface: #ffffff; /* Pure white surface */
+    --color-surface-hover: #fafafa; /* Minimal hover state background */
+    --color-border: #e5e5ea; /* Apple light gray divider border */
+    --color-text-main: #1d1d1f; /* Apple primary text */
+    --color-text-muted: #86868b; /* Apple secondary text */
+    --color-primary: #0071e3; /* Apple system blue */
+    --color-primary-light: rgba(0, 113, 227, 0.05); /* Extremely subtle blue wash */
+    --color-accent: #ff9500; /* Apple system orange */
+    --color-success: #34c759; /* Apple system green */
+    --color-glow: rgba(0, 0, 0, 0.04); /* Subtle shadow glow */
+    
     /* GLASSMORPHISM EQUIVALENTS */
-    --color-surface-glass: rgba(255, 255, 255, 0.65);
-    --color-border-glass: rgba(226, 232, 240, 0.5);
+    --color-surface-glass: rgba(255, 255, 255, 0.85);
+    --color-border-glass: rgba(229, 229, 234, 0.6);
   }
 
+  /* Sync .dark context to match light variables to lock active light theme */
   .dark {
-    /* DARK MODE (Synthetic Intelligence - High Fidelity Premium Dark) */
-    --color-bg: #070b19;
-    --color-surface: #0f172a;
-    --color-surface-hover: #1e293b;
-    --color-border: #1e293b;
-    --color-text-main: #f8fafc;
-    --color-text-muted: #94a3b8;
-    --color-primary: #6366f1;
-    --color-primary-light: rgba(99, 102, 241, 0.15);
-    --color-accent: #fbbf24;
-    --color-success: #10b981;
-    --color-glow: rgba(99, 102, 241, 0.35);
-
-    /* GLASSMORPHISM EQUIVALENTS */
-    --color-surface-glass: rgba(15, 23, 42, 0.65);
-    --color-border-glass: rgba(30, 41, 59, 0.5);
+    --color-bg: #f5f5f7;
+    --color-surface: #ffffff;
+    --color-surface-hover: #fafafa;
+    --color-border: #e5e5ea;
+    --color-text-main: #1d1d1f;
+    --color-text-muted: #86868b;
+    --color-primary: #0071e3;
+    --color-primary-light: rgba(0, 113, 227, 0.05);
+    --color-accent: #ff9500;
+    --color-success: #34c759;
+    --color-glow: rgba(0, 0, 0, 0.04);
+    --color-surface-glass: rgba(255, 255, 255, 0.85);
+    --color-border-glass: rgba(229, 229, 234, 0.6);
   }
 
   html, body, #root {
@@ -52,15 +51,18 @@
   body {
     background-color: var(--color-bg);
     color: var(--color-text-main);
-    font-family: 'Inter', system-ui, sans-serif;
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "Roboto", sans-serif;
+    letter-spacing: -0.015em;
   }
 
-  /* Custom Premium Scrollbar Theme */
+  /* Custom Clean Scrollbar Theme */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -69,36 +71,52 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--color-border);
+    background: #d2d2d7;
     border-radius: 9999px;
-    transition: background 0.3s;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-text-muted);
+    background: #86868b;
   }
 
-  /* Glassmorphism Panel Utility */
+  /* Minimal Glassmorphism Navbar Panel */
   .glass-panel {
     background-color: var(--color-surface-glass) !important;
-    border: 1px solid var(--color-border-glass) !important;
-    backdrop-filter: blur(12px) !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
-  }
-
-  .dark .glass-panel {
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    border-bottom: 1px solid var(--color-border-glass) !important;
+    backdrop-filter: saturate(180%) blur(20px) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
   }
 
   /* SVG Active Glows */
   .svg-glow {
-    filter: drop-shadow(0px 0px 8px var(--color-primary));
+    filter: drop-shadow(0px 1px 4px rgba(0, 113, 227, 0.35));
   }
   
   .svg-success-glow {
-    filter: drop-shadow(0px 0px 8px var(--color-success));
+    filter: drop-shadow(0px 1px 4px rgba(52, 199, 89, 0.35));
   }
 
   .svg-accent-glow {
-    filter: drop-shadow(0px 0px 8px var(--color-accent));
+    filter: drop-shadow(0px 1px 4px rgba(255, 149, 0, 0.35));
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none !important;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 75s linear infinite;
   }
 }

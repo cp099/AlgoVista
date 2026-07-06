@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/core/types.ts
 
 // =========================================
@@ -6,16 +7,19 @@
 
 export interface GraphNode {
     id: string;
-    val: number; // <--- This was missing!
+    val: number;
     label?: string;
     x?: number;
     y?: number;
+    state?: 'default' | 'active' | 'visited' | 'lock';
 }
 
 export interface GraphEdge {
     source: string;
     target: string;
     weight?: number;
+    isMST?: boolean;
+    label?: string;
 }
 
 export type DataStructure = 
@@ -27,16 +31,42 @@ export type DataStructure =
         visualMode?: 'bar' | 'box';
         baseColor?: string;
       }
-    | { type: 'matrix'; id: string; data: (number | string)[][]; baseColor?: string }
+    | { 
+        type: 'matrix'; 
+        id: string; 
+        data: (number | string)[][]; 
+        baseColor?: string;
+        rowHeaders?: string[];
+        colHeaders?: string[];
+        tracebackPaths?: { r: number; c: number }[];
+      }
     | { 
         type: 'graph'; 
         id: string; 
         nodes: GraphNode[]; 
         edges: GraphEdge[]; 
-        isDirected: boolean 
+        isDirected: boolean;
+        layout?: 'tree' | 'graph';
       }
     | { type: 'stack'; id: string; data: any[]; baseColor?: string }
-    | { type: 'queue'; id: string; data: any[]; baseColor?: string };
+    | { type: 'queue'; id: string; data: any[]; baseColor?: string }
+    | {
+        type: 'plot';
+        id: string;
+        points: { x: number; y: number; label?: string; id?: string; state?: 'default' | 'active' | 'hull' | 'visited' }[];
+        lines?: { p1: { x: number; y: number }; p2: { x: number; y: number }; color?: string; dashed?: boolean }[];
+        hullPath?: { x: number; y: number }[];
+        curves?: { x: number; y: number }[][];
+        shadedAreas?: { x: number; y: number }[][];
+      }
+    | {
+        type: 'geomap';
+        id: string;
+        cities: { id: string; name: string; lat: number; lon: number; state?: 'default' | 'active' | 'visited' | 'lock' }[];
+        routes?: { source: string; target: string; color?: string; dashed?: boolean }[];
+        polygonBoundaries?: { lat: number; lon: number }[][];
+        circles?: { lat: number; lon: number; radiusKm: number; color?: string }[];
+      };
 
 // =========================================
 // 2. STATE & EVENTS (The Timeline)
@@ -45,7 +75,7 @@ export type DataStructure =
 export interface AlgoState {
     structures: Record<string, DataStructure>;
     context: {
-        variables: Record<string, string | number | boolean>;
+        variables: Record<string, any>;
         pseudocodeLine?: number;
         message: string;
     };
@@ -75,11 +105,12 @@ export interface AlgoStep {
 export interface InputDefinition {
     id: string;
     label: string;
-    type: 'array' | 'integer' | 'string' | 'graph_adj_matrix'; 
+    type: 'array' | 'integer' | 'string' | 'graph_adj_matrix' | 'float'; 
     constraints?: {
         min?: number;
         max?: number;
         maxLength?: number;
+        minLength?: number;
     };
     defaultValue: any;
 }

@@ -10,26 +10,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. Check LocalStorage or System Preference on load
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('algovista-theme');
-    if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
+  // Locked to light theme for a full light theme UI
+  const [theme] = useState<Theme>('light');
 
-  // 2. Apply class to HTML tag
+  // Apply light class only and ensure dark is removed
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('algovista-theme', theme);
-  }, [theme]);
+    root.classList.remove('dark');
+    localStorage.setItem('algovista-theme', 'light');
+  }, []);
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+    // Locked to light theme
   };
 
   return (
