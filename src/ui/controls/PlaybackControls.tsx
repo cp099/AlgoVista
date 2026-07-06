@@ -46,86 +46,82 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   const opsPerSec = (1000 / speed).toFixed(1);
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full max-w-3xl mx-auto">
+    <div className="flex flex-col items-center gap-3 w-full font-sans">
       
-      {/* Progress Bar Container */}
+      {/* Sleek, Thin Progress Bar */}
       <div 
         ref={progressBarRef}
         onClick={handleProgressBarClick}
-        className="w-full h-2 bg-algo-border/40 rounded-full overflow-hidden relative group cursor-pointer hover:h-2.5 transition-all duration-200"
+        className="w-full h-1 bg-slate-100 rounded-full overflow-hidden relative group cursor-pointer hover:h-1.5 transition-all"
         title="Click to seek"
       >
         <div 
-          className="h-full bg-gradient-to-r from-algo-primary to-purple-500 transition-all duration-300 ease-out"
+          className="h-full bg-[#0071e3] transition-all duration-300 ease-out"
           style={{ width: `${progress * 100}%` }}
         />
-        {/* Glow point overlay */}
         <div 
-          className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_#ffffff] transition-all duration-300 ease-out"
-          style={{ left: `calc(${progress * 100}% - 2px)` }}
+          className="absolute top-0 bottom-0 w-[2px] bg-white transition-all duration-300 ease-out"
+          style={{ left: `calc(${progress * 100}% - 1px)` }}
         />
       </div>
 
-      {/* Control Deck (Horizontal Pill layout) */}
-      <div className="flex flex-col sm:flex-row items-center justify-between w-full px-6 py-3 bg-algo-surface/80 border border-algo-border rounded-2xl shadow-xl gap-4 sm:gap-2">
+      {/* Control Deck Toolbar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between w-full py-1 gap-3 sm:gap-2 text-slate-700">
         
-        {/* Left Side: Reset & Steps */}
-        <div className="flex items-center gap-4">
+        {/* Left: Reset & Steps */}
+        <div className="flex items-center gap-3.5">
           <button 
             onClick={onReset} 
-            className="text-algo-muted hover:text-algo-text transition-colors p-2 rounded-xl hover:bg-algo-surface-hover hover:scale-105 active:scale-95" 
-            title="Reset to Step 1"
+            className="text-slate-400 hover:text-slate-800 transition-colors p-1.5 rounded-md hover:bg-slate-50 active:scale-95" 
+            title="Reset"
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={15} />
           </button>
           
-          <div className="w-px h-5 bg-algo-border" />
+          <div className="w-px h-4 bg-slate-200" />
           
-          <div className="text-xs font-mono text-algo-muted min-w-[70px] font-bold">
+          <div className="text-[11px] font-mono text-slate-400 font-medium tracking-normal select-none">
             STEP {currentStep} <span className="opacity-40">/</span> {totalSteps}
           </div>
         </div>
 
-        {/* Center: Navigation Buttons */}
-        <div className="flex items-center gap-3">
-          {/* Step Back */}
+        {/* Center: Playback Controls */}
+        <div className="flex items-center gap-1.5">
           <button 
             onClick={onPrev} 
-            className="text-algo-text hover:text-algo-primary hover:bg-algo-primary/10 transition-colors p-2 rounded-xl active:scale-90"
+            className="text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors p-1.5 rounded-lg active:scale-90"
             title="Previous Step"
           >
-            <ChevronLeft size={22} />
+            <ChevronLeft size={20} />
           </button>
 
-          {/* Play/Pause Button */}
           <button 
             onClick={isPlaying ? onPause : onPlay}
-            className="bg-algo-primary hover:bg-algo-primary hover:opacity-90 text-white p-3 rounded-full transition-all duration-300 shadow-md shadow-algo-primary/20 hover:shadow-algo-primary/45 active:scale-95 flex items-center justify-center border-2 border-transparent"
-            title={isPlaying ? "Pause Visualizer" : "Start Visualizer"}
+            className="bg-slate-900 text-white w-9 h-9 rounded-full transition-colors active:scale-95 flex items-center justify-center hover:bg-slate-800"
+            title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
-              <Pause size={20} fill="currentColor" />
+              <Pause size={15} fill="currentColor" />
             ) : (
-              <Play size={20} fill="currentColor" className="ml-0.5" />
+              <Play size={15} fill="currentColor" className="ml-0.5" />
             )}
           </button>
 
-          {/* Step Forward */}
           <button 
             onClick={onNext} 
-            className="text-algo-text hover:text-algo-primary hover:bg-algo-primary/10 transition-colors p-2 rounded-xl active:scale-90"
+            className="text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors p-1.5 rounded-lg active:scale-90"
             title="Next Step"
           >
-            <ChevronRight size={22} />
+            <ChevronRight size={20} />
           </button>
         </div>
 
-        {/* Right Side: Speed Control */}
+        {/* Right: Speed Control slider */}
         <div className="flex items-center gap-3">
-          <div className="w-px h-5 bg-algo-border hidden sm:block" />
+          <div className="w-px h-4 bg-slate-200 hidden sm:block" />
           
-          <div className="flex items-center gap-2 bg-algo-surface/50 px-3 py-1.5 rounded-xl border border-algo-border/40">
-            <span className="text-[10px] font-mono text-algo-muted font-bold">SPEED:</span>
+          <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
+            <span className="text-[9px] font-mono text-slate-400 font-bold tracking-tight">SPEED:</span>
             <input 
               type="range" 
               min="50" 
@@ -133,10 +129,10 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
               step="50"
               value={1550 - speed} 
               onChange={(e) => onSpeedChange(1550 - parseInt(e.target.value))}
-              className="w-20 h-1 bg-algo-border rounded-full appearance-none cursor-pointer accent-algo-primary outline-none"
-              title="Drag to change speed"
+              className="w-16 md:w-20 h-[3px] bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#0071e3] outline-none"
+              title="Change Speed"
             />
-            <span className="text-[10px] font-mono text-algo-text font-extrabold w-12 text-right">
+            <span className="text-[9px] font-mono text-slate-600 font-semibold w-10 text-right select-none">
               {opsPerSec} op/s
             </span>
           </div>

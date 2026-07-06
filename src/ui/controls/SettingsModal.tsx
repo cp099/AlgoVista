@@ -1,238 +1,259 @@
-import React from 'react';
-import { X, Moon, Sun, Sliders, Volume2, Activity, Eye, RefreshCw, HelpCircle } from 'lucide-react';
-import { useTheme } from '@core/ThemeContext';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Eye, RefreshCw, HelpCircle, X, Sun } from 'lucide-react';
 import { useSettings, NodeStyle } from '@core/SettingsContext';
+import { cn } from '@utils/cn';
 
 interface SettingsModalProps {
   onClose: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
-  const { theme, toggleTheme } = useTheme();
   const { settings, updateSetting, resetSettings } = useSettings();
+  const [activeTab, setActiveTab] = useState<'appearance' | 'defaults' | 'systems'>('appearance');
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-algo-surface border border-algo-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col h-[520px]">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in font-sans">
+      {/* Dimmed backdrop overlay */}
+      <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-xs" onClick={onClose} />
+
+      {/* Centered Modal Container */}
+      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-3xl h-[70vh] flex flex-col shadow-2xl relative overflow-hidden z-10 animate-scale-up">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-algo-border bg-algo-surface">
-          <h2 className="text-lg font-extrabold text-algo-text flex items-center gap-2">
-            <Sliders size={20} className="text-algo-primary" />
-            Preferences Dashboard
-          </h2>
-          <button 
-            onClick={onClose} 
-            className="p-1.5 rounded-lg text-algo-muted hover:text-algo-text hover:bg-algo-surface-hover transition"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-algo-border scrollbar-track-transparent">
+        <header className="border-b border-slate-100 px-6 py-4 flex items-center justify-between shrink-0 bg-white">
+          <div>
+            <h1 className="text-base font-semibold text-slate-900">Preferences</h1>
+            <p className="text-[10px] text-slate-400">Configure visualizer aesthetics and default behaviours</p>
+          </div>
           
-          {/* Theme Section */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-algo-muted uppercase tracking-widest block">Appearance</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button 
-                onClick={() => theme === 'dark' && toggleTheme()}
-                className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-semibold transition-all duration-300 ${
-                  theme === 'light' 
-                    ? 'bg-algo-primary text-white border-algo-primary shadow-lg shadow-algo-primary/20' 
-                    : 'bg-algo-surface text-algo-text border-algo-border hover:border-algo-muted'
-                }`}
-              >
-                <Sun size={16} /> Light Mode
-              </button>
-
-              <button 
-                onClick={() => theme === 'light' && toggleTheme()}
-                className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-semibold transition-all duration-300 ${
-                  theme === 'dark' 
-                    ? 'bg-algo-primary text-white border-algo-primary shadow-lg shadow-algo-primary/20' 
-                    : 'bg-algo-surface text-algo-text border-algo-border hover:border-algo-muted'
-                }`}
-              >
-                <Moon size={16} /> Dark Mode
-              </button>
-            </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={resetSettings}
+              className="flex items-center gap-1 px-2.5 py-1.5 hover:bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-slate-800 transition"
+            >
+              <RefreshCw size={11} />
+              Reset Defaults
+            </button>
+            <button 
+              onClick={onClose}
+              className="p-1 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-slate-700 transition"
+              title="Close Settings"
+            >
+              <X size={18} />
+            </button>
           </div>
+        </header>
 
-          {/* Node Theme Style */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-algo-muted uppercase tracking-widest block">Visualizer Node Styling</label>
-            <div className="grid grid-cols-3 gap-2.5">
-              {(['neon', 'slate', 'contrast'] as NodeStyle[]).map(style => (
-                <button
-                  key={style}
-                  onClick={() => updateSetting('nodeStyle', style)}
-                  className={`p-3 rounded-xl border text-xs font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 capitalize ${
-                    settings.nodeStyle === style
-                      ? 'bg-algo-primary/10 border-algo-primary text-algo-primary shadow-inner'
-                      : 'bg-algo-bg/45 border-algo-border text-algo-muted hover:border-algo-muted hover:text-algo-text'
-                  }`}
-                >
-                  {style === 'neon' && <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 shadow-md shadow-indigo-500/50" />}
-                  {style === 'slate' && <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />}
-                  {style === 'contrast' && <span className="w-2.5 h-2.5 rounded-full bg-transparent border-2 border-current" />}
-                  {style}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* Workspace split */}
+        <div className="flex-1 w-full flex flex-col md:flex-row overflow-hidden bg-white">
+          
+          {/* Left Column: Side Tabs */}
+          <aside className="w-full md:w-56 border-b md:border-b-0 md:border-r border-slate-100 p-4 flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible shrink-0 bg-slate-50/50">
+            <button
+              onClick={() => setActiveTab('appearance')}
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors w-full shrink-0 md:shrink justify-center md:justify-start",
+                activeTab === 'appearance' 
+                  ? "bg-slate-200/60 text-slate-950 font-bold" 
+                  : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
+              )}
+            >
+              <Sun size={14} />
+              General Aesthetics
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('defaults')}
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors w-full shrink-0 md:shrink justify-center md:justify-start",
+                activeTab === 'defaults' 
+                  ? "bg-slate-200/60 text-slate-950 font-bold" 
+                  : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
+              )}
+            >
+              <Eye size={14} />
+              Visualizer Defaults
+            </button>
 
-          {/* Default Playback Configs */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-algo-muted uppercase tracking-widest block">Visualizer Defaults</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Default Gridlines */}
-              <div className="bg-algo-surface border border-algo-border p-4 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-algo-primary/10 rounded-lg text-algo-primary">
-                    <Eye size={16} />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-algo-text">Show Gridlines</h4>
-                    <p className="text-[10px] text-algo-muted">Show backdrop grid by default</p>
+            <button
+              onClick={() => setActiveTab('systems')}
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors w-full shrink-0 md:shrink justify-center md:justify-start",
+                activeTab === 'systems' 
+                  ? "bg-slate-200/60 text-slate-950 font-bold" 
+                  : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
+              )}
+            >
+              <HelpCircle size={14} />
+              Educational Modules
+            </button>
+          </aside>
+
+          {/* Right Column: Tab Contents */}
+          <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 scrollbar-thin">
+            
+            {activeTab === 'appearance' && (
+              <div className="space-y-5 animate-fade-in text-xs">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-950">Visualizer Node Styling</h2>
+                  <p className="text-slate-400 mt-0.5">Customize visualizer node layout renders.</p>
+                </div>
+
+                <div className="border border-slate-100 bg-slate-50/30 rounded-xl p-4.5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-0.5 max-w-sm">
+                      <h4 className="font-semibold text-slate-800">Node Layout Themes</h4>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        Neon applies glowing neon drop shadows; Slate uses a minimal flat theme; Contrast reinforces bold outlines for print contrast.
+                      </p>
+                    </div>
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0 self-start sm:self-auto">
+                      {(['neon', 'slate', 'contrast'] as NodeStyle[]).map(style => (
+                        <button
+                          key={style}
+                          onClick={() => updateSetting('nodeStyle', style)}
+                          className={cn(
+                            "px-3 py-1.5 text-[11px] font-semibold rounded-md capitalize transition",
+                            settings.nodeStyle === style ? "bg-white text-slate-900 shadow-xs" : "text-slate-400 hover:text-slate-700"
+                          )}
+                        >
+                          {style}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => updateSetting('defaultGrid', !settings.defaultGrid)}
-                  className={`w-11 h-6 rounded-full p-1 transition-all duration-300 relative ${
-                    settings.defaultGrid ? 'bg-algo-primary' : 'bg-algo-surface border border-algo-border'
-                  }`}
-                >
-                  <span className={`block w-4 h-4 rounded-full bg-white transition-all duration-300 transform ${
-                    settings.defaultGrid ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
-                </button>
               </div>
+            )}
 
-              {/* Default Delay Speed */}
-              <div className="bg-algo-surface border border-algo-border p-4 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-algo-primary/10 rounded-lg text-algo-primary">
-                    <Activity size={16} />
+            {activeTab === 'defaults' && (
+              <div className="space-y-5 animate-fade-in text-xs">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-950">Visualizer Defaults</h2>
+                  <p className="text-slate-400 mt-0.5">Set the initial properties when an algorithm playground is launched.</p>
+                </div>
+
+                <div className="border border-slate-100 bg-slate-50/30 rounded-xl p-4.5 space-y-4">
+                  {/* Default Speed */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1 border-b border-slate-100 pb-3">
+                    <div className="space-y-0.5">
+                      <h4 className="font-semibold text-slate-800">Default Execution Speed</h4>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">Initial duration between steps in milliseconds.</p>
+                    </div>
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0 self-start sm:self-auto">
+                      {([200, 500, 1000] as number[]).map(speedVal => (
+                        <button
+                          key={speedVal}
+                          onClick={() => updateSetting('defaultSpeed', speedVal)}
+                          className={cn(
+                            "px-3 py-1.5 text-[11px] font-semibold rounded-md transition",
+                            settings.defaultSpeed === speedVal ? "bg-white text-slate-900 shadow-xs" : "text-slate-400 hover:text-slate-700"
+                          )}
+                        >
+                          {speedVal}ms
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-algo-text">Default Delay</h4>
-                    <p className="text-[10px] text-algo-muted">Playback delay in ms</p>
+
+                  {/* Default Grid Mode */}
+                  <div className="flex items-center justify-between py-1">
+                    <div className="space-y-0.5">
+                      <h4 className="font-semibold text-slate-800">Default Background Grid</h4>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">Always enable the layout align alignment grid on visualizer startup.</p>
+                    </div>
+                    <button
+                      onClick={() => updateSetting('defaultGrid', !settings.defaultGrid)}
+                      className={cn(
+                        "w-9 h-5 rounded-full p-0.5 transition relative shrink-0",
+                        settings.defaultGrid ? 'bg-[#34c759]' : 'bg-slate-200'
+                      )}
+                    >
+                      <span className={cn(
+                        "block w-4 h-4 rounded-full bg-white transition-all transform",
+                        settings.defaultGrid ? 'translate-x-4' : 'translate-x-0'
+                      )} />
+                    </button>
                   </div>
                 </div>
-                <select
-                  value={settings.defaultSpeed}
-                  onChange={(e) => updateSetting('defaultSpeed', parseInt(e.target.value))}
-                  className="bg-algo-surface border border-algo-border rounded-lg text-xs font-bold py-1 px-2 text-algo-text outline-none focus:border-algo-primary cursor-pointer"
-                >
-                  <option value="100">100ms (Fast)</option>
-                  <option value="300">300ms (Normal)</option>
-                  <option value="600">600ms (Slow)</option>
-                  <option value="1000">1000ms (Lagged)</option>
-                </select>
               </div>
+            )}
 
-            </div>
-          </div>
+            {activeTab === 'systems' && (
+              <div className="space-y-5 animate-fade-in text-xs">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-950">Educational Systems & Controls</h2>
+                  <p className="text-slate-400 mt-0.5">Toggle sound cues and active interactive features.</p>
+                </div>
 
-          {/* Accessibility & Debug */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-algo-muted uppercase tracking-widest block">System Features</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Sound Indicators */}
-              <div className="bg-algo-surface border border-algo-border p-4 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-algo-primary/10 rounded-lg text-algo-primary">
-                    <Volume2 size={16} />
+                <div className="border border-slate-100 bg-slate-50/30 rounded-xl p-4.5 space-y-4">
+                  {/* Socratic Quizzes */}
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 pb-3">
+                    <div className="space-y-0.5">
+                      <h4 className="font-semibold text-slate-800">Socratic Quiz Module</h4>
+                      <p className="text-slate-400 text-[11px] max-w-md leading-relaxed">Interrupts playback at critical steps to ask conceptual prediction questions.</p>
+                    </div>
+                    <button
+                      onClick={() => updateSetting('quizzesEnabled', !settings.quizzesEnabled)}
+                      className={cn(
+                        "w-9 h-5 rounded-full p-0.5 transition relative shrink-0",
+                        settings.quizzesEnabled ? 'bg-[#34c759]' : 'bg-slate-200'
+                      )}
+                    >
+                      <span className={cn(
+                        "block w-4 h-4 rounded-full bg-white transition-all transform",
+                        settings.quizzesEnabled ? 'translate-x-4' : 'translate-x-0'
+                      )} />
+                    </button>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-algo-text">Sound Indicators</h4>
-                    <p className="text-[10px] text-algo-muted">Mock comparison triggers</p>
+
+                  {/* Sound Indicators */}
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 pb-3">
+                    <div className="space-y-0.5">
+                      <h4 className="font-semibold text-slate-800">Sound Indicators</h4>
+                      <p className="text-slate-400 text-[11px] max-w-md leading-relaxed">Generates real-time marimba-like notes mapped to data values using Web Audio synthesis.</p>
+                    </div>
+                    <button
+                      onClick={() => updateSetting('soundEnabled', !settings.soundEnabled)}
+                      className={cn(
+                        "w-9 h-5 rounded-full p-0.5 transition relative shrink-0",
+                        settings.soundEnabled ? 'bg-[#34c759]' : 'bg-slate-200'
+                      )}
+                    >
+                      <span className={cn(
+                        "block w-4 h-4 rounded-full bg-white transition-all transform",
+                        settings.soundEnabled ? 'translate-x-4' : 'translate-x-0'
+                      )} />
+                    </button>
+                  </div>
+
+                  {/* Diagnostics Telemetry */}
+                  <div className="flex items-center justify-between py-1">
+                    <div className="space-y-0.5">
+                      <h4 className="font-semibold text-slate-800">Diagnostics Telemetry Monitor</h4>
+                      <p className="text-slate-400 text-[11px] max-w-md leading-relaxed">Displays execution delay charts, active structural nodes list, and diagnostics timeline indices.</p>
+                    </div>
+                    <button
+                      onClick={() => updateSetting('debugMode', !settings.debugMode)}
+                      className={cn(
+                        "w-9 h-5 rounded-full p-0.5 transition relative shrink-0",
+                        settings.debugMode ? 'bg-[#34c759]' : 'bg-slate-200'
+                      )}
+                    >
+                      <span className={cn(
+                        "block w-4 h-4 rounded-full bg-white transition-all transform",
+                        settings.debugMode ? 'translate-x-4' : 'translate-x-0'
+                      )} />
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => updateSetting('soundEnabled', !settings.soundEnabled)}
-                  className={`w-11 h-6 rounded-full p-1 transition-all duration-300 relative ${
-                    settings.soundEnabled ? 'bg-algo-primary' : 'bg-algo-surface border border-algo-border'
-                  }`}
-                >
-                  <span className={`block w-4 h-4 rounded-full bg-white transition-all duration-300 transform ${
-                    settings.soundEnabled ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
-                </button>
               </div>
-
-              {/* Debug Monitor Mode */}
-              <div className="bg-algo-surface border border-algo-border p-4 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-algo-primary/10 rounded-lg text-algo-primary">
-                    <Activity size={16} />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-algo-text">Diagnostics Mode</h4>
-                    <p className="text-[10px] text-algo-muted">Show telemetry on visualizer</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => updateSetting('debugMode', !settings.debugMode)}
-                  className={`w-11 h-6 rounded-full p-1 transition-all duration-300 relative ${
-                    settings.debugMode ? 'bg-algo-primary' : 'bg-algo-surface border border-algo-border'
-                  }`}
-                >
-                  <span className={`block w-4 h-4 rounded-full bg-white transition-all duration-300 transform ${
-                    settings.debugMode ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
-                </button>
-              </div>
-
-              {/* Socratic Quizzes Toggle */}
-              <div className="bg-algo-surface border border-algo-border p-4 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-algo-primary/10 rounded-lg text-algo-primary">
-                    <HelpCircle size={16} />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-algo-text">Active Recall Quizzes</h4>
-                    <p className="text-[10px] text-algo-muted">Ask questions during playback</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => updateSetting('quizzesEnabled', !settings.quizzesEnabled)}
-                  className={`w-11 h-6 rounded-full p-1 transition-all duration-300 relative ${
-                    settings.quizzesEnabled ? 'bg-algo-primary' : 'bg-algo-surface border border-algo-border'
-                  }`}
-                >
-                  <span className={`block w-4 h-4 rounded-full bg-white transition-all duration-300 transform ${
-                    settings.quizzesEnabled ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
-                </button>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-
-        {/* Footer Actions */}
-        <div className="p-4 border-t border-algo-border bg-algo-surface flex justify-between items-center shrink-0">
-          <button 
-            onClick={resetSettings}
-            className="flex items-center gap-1.5 px-4 py-2 hover:bg-algo-surface border border-transparent hover:border-algo-border rounded-xl text-xs font-bold text-algo-muted hover:text-algo-text transition duration-300"
-          >
-            <RefreshCw size={12} />
-            Reset Defaults
-          </button>
-          <button 
-            onClick={onClose}
-            className="px-5 py-2.5 bg-algo-primary hover:bg-algo-primary/95 text-white text-xs font-bold rounded-xl transition duration-300 shadow-md shadow-algo-primary/10 active:scale-[0.98]"
-          >
-            Apply Changes
-          </button>
+            )}
+          </main>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

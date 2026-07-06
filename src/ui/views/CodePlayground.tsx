@@ -10,10 +10,10 @@ interface CodePlaygroundProps {
 
 type Language = 'pseudocode' | 'javascript' | 'python' | 'cpp' | 'java';
 
-export const translatePseudocodeLine = (line: string, lang: Language): string => {
+const translatePseudocodeLine = (line: string, lang: Language): string => {
   if (lang === 'pseudocode') return line;
   
-  let trimmed = line.trim();
+  const trimmed = line.trim();
   const indent = line.substring(0, line.length - trimmed.length);
   
   if (trimmed === '') return '';
@@ -44,12 +44,12 @@ export const translatePseudocodeLine = (line: string, lang: Language): string =>
     if (trimmed.startsWith('while ') && trimmed.endsWith(':')) {
       return indent + `while (${trimmed.substring(6, trimmed.length - 1).trim()}) {`;
     }
-    trimmed = trimmed.replace(/length\((\w+)\)/g, '$1.length');
-    trimmed = trimmed.replace(/swap\((\w+\[\w+\]),\s*(\w+\[\w+\])\)/g, '[$1, $2] = [$2, $1]');
-    if (trimmed.startsWith('return ') && !trimmed.endsWith(';')) {
-      trimmed = trimmed + ';';
+    let jsLine = trimmed.replace(/length\((\w+)\)/g, '$1.length');
+    jsLine = jsLine.replace(/swap\((\w+\[\w+\]),\s*(\w+\[\w+\])\)/g, '[$1, $2] = [$2, $1]');
+    if (jsLine.startsWith('return ') && !jsLine.endsWith(';')) {
+      jsLine = jsLine + ';';
     }
-    return indent + trimmed;
+    return indent + jsLine;
   }
   
   if (lang === 'python') {
@@ -69,9 +69,9 @@ export const translatePseudocodeLine = (line: string, lang: Language): string =>
       const [, val, arr] = match;
       return indent + `for ${val} in ${arr}:`;
     }
-    trimmed = trimmed.replace(/length\((\w+)\)/g, 'len($1)');
-    trimmed = trimmed.replace(/swap\((\w+\[\w+\]),\s*(\w+\[\w+\])\)/g, '$1, $2 = $2, $1');
-    return indent + trimmed;
+    let pyLine = trimmed.replace(/length\((\w+)\)/g, 'len($1)');
+    pyLine = pyLine.replace(/swap\((\w+\[\w+\]),\s*(\w+\[\w+\])\)/g, '$1, $2 = $2, $1');
+    return indent + pyLine;
   }
   
   if (lang === 'cpp') {
@@ -82,7 +82,7 @@ export const translatePseudocodeLine = (line: string, lang: Language): string =>
       }
       return indent + `auto ${sig}`;
     }
-    let match = trimmed.match(/for\s+(\w+)\s+from\s+([^\s:]+)\s+to\s+([^\s:]+):/);
+    const match = trimmed.match(/for\s+(\w+)\s+from\s+([^\s:]+)\s+to\s+([^\s:]+):/);
     if (match) {
       const [, varName, start, end] = match;
       return indent + `for (int ${varName} = ${start}; ${varName} <= ${end}; ${varName}++) {`;
@@ -93,20 +93,20 @@ export const translatePseudocodeLine = (line: string, lang: Language): string =>
     if (trimmed.startsWith('while ') && trimmed.endsWith(':')) {
       return indent + `while (${trimmed.substring(6, trimmed.length - 1).trim()}) {`;
     }
-    trimmed = trimmed.replace(/length\((\w+)\)/g, '$1.size()');
-    trimmed = trimmed.replace(/swap\((\w+\[\w+\]),\s*(\w+\[\w+\])\)/g, 'std::swap($1, $2);');
-    if (!trimmed.endsWith('{') && !trimmed.endsWith('}') && !trimmed.endsWith(':') && !trimmed.endsWith(';')) {
-      trimmed = trimmed + ';';
+    let cppLine = trimmed.replace(/length\((\w+)\)/g, '$1.size()');
+    cppLine = cppLine.replace(/swap\((\w+\[\w+\]),\s*(\w+\[\w+\])\)/g, 'std::swap($1, $2);');
+    if (!cppLine.endsWith('{') && !cppLine.endsWith('}') && !cppLine.endsWith(':') && !cppLine.endsWith(';')) {
+      cppLine = cppLine + ';';
     }
-    return indent + trimmed;
+    return indent + cppLine;
   }
-
+  
   if (lang === 'java') {
     if (trimmed.startsWith('function ')) {
       const sig = trimmed.substring(9).replace(/:$/, ' {');
       return indent + `public static void ${sig}`;
     }
-    let match = trimmed.match(/for\s+(\w+)\s+from\s+([^\s:]+)\s+to\s+([^\s:]+):/);
+    const match = trimmed.match(/for\s+(\w+)\s+from\s+([^\s:]+)\s+to\s+([^\s:]+):/);
     if (match) {
       const [, varName, start, end] = match;
       return indent + `for (int ${varName} = ${start}; ${varName} <= ${end}; ${varName}++) {`;
@@ -117,12 +117,12 @@ export const translatePseudocodeLine = (line: string, lang: Language): string =>
     if (trimmed.startsWith('while ') && trimmed.endsWith(':')) {
       return indent + `while (${trimmed.substring(6, trimmed.length - 1).trim()}) {`;
     }
-    trimmed = trimmed.replace(/length\((\w+)\)/g, '$1.length');
-    trimmed = trimmed.replace(/swap\((\w+\[\w+\]),\s*(\w+\[\w+\])\)/g, 'swap($1, $2);');
-    if (!trimmed.endsWith('{') && !trimmed.endsWith('}') && !trimmed.endsWith(':') && !trimmed.endsWith(';')) {
-      trimmed = trimmed + ';';
+    let javaLine = trimmed.replace(/length\((\w+)\)/g, '$1.length');
+    javaLine = javaLine.replace(/swap\((\w+\[\w+\]),\s*(\w+\[\w+\])\)/g, 'swap($1, $2);');
+    if (!javaLine.endsWith('{') && !javaLine.endsWith('}') && !javaLine.endsWith(':') && !javaLine.endsWith(';')) {
+      javaLine = javaLine + ';';
     }
-    return indent + trimmed;
+    return indent + javaLine;
   }
 
   return line;
@@ -138,7 +138,6 @@ export const CodePlayground: React.FC<CodePlaygroundProps> = ({
   const [editedCode, setEditedCode] = useState<string>('');
   const [isSaved, setIsSaved] = useState(false);
 
-  // Translate code into the selected language
   const getTranslatedCode = () => {
     return pseudocode.map(line => translatePseudocodeLine(line, selectedLang));
   };
@@ -165,11 +164,11 @@ export const CodePlayground: React.FC<CodePlaygroundProps> = ({
   };
 
   return (
-    <div className="glass-panel border border-algo-border rounded-2xl p-5 shadow-lg flex flex-col h-[380px] overflow-hidden">
+    <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.01)] flex flex-col h-[385px] overflow-hidden font-sans">
       
-      {/* TABS HEADER */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-algo-border/30 pb-3 mb-3">
-        <div className="flex flex-wrap gap-1 bg-algo-bg/50 p-1 rounded-xl border border-algo-border/40">
+      {/* Tab select header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5 mb-3.5">
+        <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200/80">
           {(['pseudocode', 'javascript', 'python', 'cpp', 'java'] as Language[]).map(lang => (
             <button
               key={lang}
@@ -178,10 +177,10 @@ export const CodePlayground: React.FC<CodePlaygroundProps> = ({
                 setIsEditing(false);
               }}
               className={cn(
-                "px-2.5 py-1.5 text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all duration-300",
+                "px-2.5 py-1 text-[10px] font-semibold rounded-md uppercase transition",
                 selectedLang === lang 
-                  ? "bg-algo-primary text-white shadow-md shadow-algo-primary/10" 
-                  : "text-algo-muted hover:text-algo-text hover:bg-algo-surface-hover"
+                  ? "bg-white text-slate-950 shadow-xs" 
+                  : "text-slate-400 hover:text-slate-800"
               )}
             >
               {lang === 'cpp' ? 'C++' : lang}
@@ -189,20 +188,20 @@ export const CodePlayground: React.FC<CodePlaygroundProps> = ({
           ))}
         </div>
         
-        {/* EDIT STATE ACTIONS */}
-        <div className="flex gap-2">
+        {/* Actions */}
+        <div className="flex gap-2 text-[10px] font-semibold">
           {isEditing ? (
             <>
               <button 
                 onClick={handleSave}
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-algo-success hover:bg-algo-success/90 text-white text-[10px] font-bold rounded-lg shadow-sm transition"
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-[#34c759] text-white rounded-lg transition"
               >
                 <Check size={12} />
                 Save & Run
               </button>
               <button 
                 onClick={() => setIsEditing(false)}
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-algo-surface hover:bg-algo-surface-hover border border-algo-border text-[10px] font-bold rounded-lg text-algo-muted transition"
+                className="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 transition"
               >
                 Cancel
               </button>
@@ -211,10 +210,10 @@ export const CodePlayground: React.FC<CodePlaygroundProps> = ({
             <button 
               onClick={handleEditToggle}
               className={cn(
-                "flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-algo-border transition duration-300",
+                "flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition duration-200",
                 isSaved 
-                  ? "bg-algo-success/15 border-algo-success text-algo-success animate-pulse" 
-                  : "bg-algo-surface hover:bg-algo-surface-hover text-algo-muted hover:text-algo-text"
+                  ? "bg-[#34c759]/10 border-[#34c759]/20 text-[#34c759]" 
+                  : "bg-white border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-850"
               )}
             >
               <Edit2 size={12} />
@@ -224,30 +223,30 @@ export const CodePlayground: React.FC<CodePlaygroundProps> = ({
         </div>
       </div>
 
-      {/* CODE DISPLAY AREA */}
+      {/* Code Textarea / Viewer */}
       <div className="flex-1 overflow-hidden relative">
         {isEditing ? (
           <textarea
             value={editedCode}
             onChange={(e) => setEditedCode(e.target.value)}
-            className="w-full h-full bg-algo-bg/50 border border-algo-border/40 p-4 rounded-xl font-mono text-xs text-algo-text outline-none focus:ring-2 focus:ring-algo-primary/50 resize-none overflow-y-auto"
-            placeholder="Edit your custom algorithm implementation..."
+            className="w-full h-full bg-slate-50/50 border border-slate-200 p-4 rounded-lg font-mono text-xs text-slate-800 outline-none focus:border-slate-300 resize-none overflow-y-auto"
+            placeholder="Edit pseudocode..."
           />
         ) : (
-          <div className="w-full h-full overflow-y-auto font-mono text-xs text-algo-text space-y-1 pr-2 scrollbar-thin scrollbar-thumb-algo-border scrollbar-track-transparent">
+          <div className="w-full h-full overflow-y-auto font-mono text-xs text-slate-700 space-y-0.5 pr-2 scrollbar-thin">
             {translatedLines.map((line, idx) => {
               const isActive = activeLine === (idx + 1);
               return (
                 <div 
                   key={idx} 
                   className={cn(
-                    "px-3 py-1.5 rounded-lg transition-all duration-150 border flex items-start gap-3",
+                    "px-3 py-1 rounded-md transition border flex items-start gap-3",
                     isActive 
-                      ? "bg-algo-primary/10 text-algo-primary border-algo-primary/30 shadow-sm" 
-                      : "text-algo-muted border-transparent hover:text-algo-text"
+                      ? "bg-blue-50/70 text-[#0071e3] border-blue-100" 
+                      : "text-slate-500 border-transparent hover:text-slate-900"
                   )}
                 >
-                  <span className="w-6 text-algo-muted/40 select-none text-right font-bold text-[10px] pt-0.5">{idx + 1}</span>
+                  <span className="w-5 text-slate-300 select-none text-right font-medium text-[10px] pt-0.5">{idx + 1}</span>
                   <pre className="whitespace-pre-wrap font-mono font-medium">{line}</pre>
                 </div>
               );
