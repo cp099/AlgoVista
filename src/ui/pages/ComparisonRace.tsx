@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Shuffle, Plus, Trash2, Clock, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, Pause, RotateCcw, Shuffle, Plus, X, Clock } from 'lucide-react';
 import { getAllAlgorithms, getAlgorithm } from '@registry/index';
 import { Stage } from '@renderer/Stage';
 import { cn } from '@utils/cn';
@@ -22,12 +22,10 @@ interface RunnerState {
 type DistributionType = 'random' | 'reversed' | 'sorted' | 'unique';
 
 export const ComparisonRace: React.FC = () => {
-  // Get all sorting algorithm manifests
   const sortingManifests = getAllAlgorithms().filter(
     a => a.category.toLowerCase() === 'sorting'
   );
 
-  // States
   const [selectedAlgos, setSelectedAlgos] = useState<string[]>([
     'bubble-sort',
     'selection-sort',
@@ -38,13 +36,12 @@ export const ComparisonRace: React.FC = () => {
   const [sharedArray, setSharedArray] = useState<number[]>([]);
   const [runners, setRunners] = useState<RunnerState[]>([]);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [speed, setSpeed] = useState<number>(300); // delay in ms
-  const [finishOrder, setFinishOrder] = useState<string[]>([]); // Track finish sequence (podium)
+  const [speed, setSpeed] = useState<number>(300);
+  const [finishOrder, setFinishOrder] = useState<string[]>([]);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Generate new array based on distribution type
-  const generateNewArray = () => {
+  const generateNewArray = useCallback(() => {
     let arr: number[] = [];
     if (presetType === 'random') {
       arr = Array.from({ length: arraySize }, () =>
@@ -55,12 +52,10 @@ export const ComparisonRace: React.FC = () => {
         Math.floor(10 + ((arraySize - 1 - i) / arraySize) * 85)
       );
     } else if (presetType === 'sorted') {
-      // 90% sorted, with a few swapped elements
       arr = Array.from({ length: arraySize }, (_, i) =>
         Math.floor(10 + (i / arraySize) * 85)
       );
       if (arr.length > 4) {
-        // Swap elements near the start and end to create local disorder
         const temp1 = arr[1]; arr[1] = arr[2]; arr[2] = temp1;
         const lastIdx = arr.length - 1;
         const temp2 = arr[lastIdx]; arr[lastIdx] = arr[lastIdx - 1]; arr[lastIdx - 1] = temp2;
@@ -74,20 +69,18 @@ export const ComparisonRace: React.FC = () => {
 
     setSharedArray(arr);
     setIsPlaying(false);
-    setFinishOrder([]); // reset podium
+    setFinishOrder([]);
     if (intervalRef.current) clearInterval(intervalRef.current);
-  };
-
-  // Generate array on mount or size/preset change
-  useEffect(() => {
-    generateNewArray();
   }, [arraySize, presetType]);
 
-  // 2. Initialize runners
-  const initRunners = () => {
+  useEffect(() => {
+    generateNewArray();
+  }, [generateNewArray]);
+
+  const initRunners = useCallback(() => {
     if (sharedArray.length === 0) return;
 
-    setFinishOrder([]); // Clear podium rankings
+    setFinishOrder([]);
 
     const newRunners: RunnerState[] = selectedAlgos.map(id => {
       const bundle = getAlgorithm(id);
@@ -128,105 +121,105 @@ export const ComparisonRace: React.FC = () => {
         writes: 0,
         finished: false,
         totalSteps: 1,
-        currentStep: 1
+        currentStep: 0
       };
     });
 
     setRunners(newRunners);
-    setIsPlaying(false);
-  };
-
-  // Initialize whenever shared array or selected algorithms change
-  useEffect(() => {
-    initRunners();
   }, [sharedArray, selectedAlgos]);
 
-  // 3. Step forward all runners by one step
-  const stepAll = () => {
-    setRunners(prevRunners => {
-      let anyActive = false;
-      const justFinished: string[] = [];
+  useEffect(() => {
+    initRunners();
+  }, [initRunners]);
 
-      const updated = prevRunners.map(runner => {
-        if (runner.finished || !runner.generator) return runner;
+  const stepRunners = useCallback(() => {
+    let allFinished = true;
+    const newFinishOrder = [...finishOrder];
 
-        const res = runner.generator.next();
-        if (res.done) {
-          justFinished.push(runner.algoId);
-          return { ...runner, finished: true };
-        } else {
-          anyActive = true;
-          const step = res.value;
-          return {
-            ...runner,
-            state: step.snapshot,
-            events: step.events,
-            comparisons: step.metrics.comparisons,
-            swaps: step.metrics.swaps,
-            writes: step.metrics.writes,
-            currentStep: runner.currentStep + 1
-          };
+    const updatedRunners = runners.map(runner => {
+      if (runner.finished || !runner.generator) {
+        return runner;
+      }
+
+      allFinished = false;
+      const nextStep = runner.generator.next();
+
+      if (nextStep.done) {
+        if (!newFinishOrder.includes(runner.algoId)) {
+          newFinishOrder.push(runner.algoId);
         }
+        return { ...runner, finished: true };
+      }
+
+      const stepVal = nextStep.value;
+      let comparisons = runner.comparisons;
+      let swaps = runner.swaps;
+      let writes = runner.writes;
+
+      stepVal.events.forEach(evt => {
+        if (evt.type === 'compare') comparisons++;
+        if (evt.type === 'swap') swaps++;
+        if (evt.type === 'write') writes++;
       });
 
-      // Append newly finished runner IDs to podium list in order of finish
-      if (justFinished.length > 0) {
-        setFinishOrder(prev => {
-          const next = [...prev];
-          justFinished.forEach(id => {
-            if (!next.includes(id)) next.push(id);
-          });
-          return next;
-        });
-      }
-
-      if (!anyActive) {
-        setIsPlaying(false);
-        if (intervalRef.current) clearInterval(intervalRef.current);
-      }
-
-      return updated;
+      return {
+        ...runner,
+        state: stepVal.snapshot,
+        events: stepVal.events,
+        comparisons,
+        swaps,
+        writes,
+        currentStep: runner.currentStep + 1
+      };
     });
-  };
 
-  // Play / Pause timer effect
+    setRunners(updatedRunners);
+    setFinishOrder(newFinishOrder);
+
+    if (allFinished) {
+      setIsPlaying(false);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    }
+  }, [runners, finishOrder]);
+
   useEffect(() => {
     if (isPlaying) {
-      intervalRef.current = setInterval(stepAll, speed);
+      intervalRef.current = setInterval(() => {
+        stepRunners();
+      }, speed);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPlaying, speed]);
+  }, [isPlaying, stepRunners, speed]);
 
   const handlePlayToggle = () => {
-    if (runners.every(r => r.finished)) {
-      initRunners();
-      setTimeout(() => setIsPlaying(true), 50);
-    } else {
-      setIsPlaying(!isPlaying);
-    }
+    setIsPlaying(!isPlaying);
   };
 
   const handleReset = () => {
+    setIsPlaying(false);
     initRunners();
   };
 
-  const handleAlgoSelect = (index: number, newId: string) => {
+  const handleAlgoSelect = (index: number, algoId: string) => {
     setSelectedAlgos(prev => {
       const copy = [...prev];
-      copy[index] = newId;
+      copy[index] = algoId;
       return copy;
     });
   };
 
   const addAlgoTrack = () => {
-    if (selectedAlgos.length >= 3) return; // Cap at 3 for visual spacing
-    const remaining = sortingManifests.find(m => !selectedAlgos.includes(m.id));
-    if (remaining) {
-      setSelectedAlgos(prev => [...prev, remaining.id]);
+    if (selectedAlgos.length >= 3) return;
+    const available = sortingManifests.find(m => !selectedAlgos.includes(m.id));
+    if (available) {
+      setSelectedAlgos(prev => [...prev, available.id]);
+    } else {
+      setSelectedAlgos(prev => [...prev, sortingManifests[0].id]);
     }
   };
 
@@ -235,32 +228,31 @@ export const ComparisonRace: React.FC = () => {
     setSelectedAlgos(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Helper to render podium badges
   const getPodiumBadge = (algoId: string) => {
     const rank = finishOrder.indexOf(algoId);
     if (rank === -1) return null;
 
     if (rank === 0) {
       return (
-        <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/35 text-amber-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse shadow-sm shadow-amber-500/5">
-          🥇 1st place (Gold)
-        </div>
+        <span className="bg-amber-500/15 border border-amber-500/35 text-amber-500 px-2 py-0.5 rounded text-[8px] font-bold tracking-tight shrink-0 uppercase">
+          🥇 1st place
+        </span>
       );
     }
 
     if (rank === 1) {
       return (
-        <div className="flex items-center gap-1 bg-slate-400/20 border border-slate-400/35 text-slate-300 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm shadow-slate-400/5">
-          🥈 2nd place (Silver)
-        </div>
+        <span className="bg-slate-700 border border-slate-650 text-slate-350 px-2 py-0.5 rounded text-[8px] font-bold tracking-tight shrink-0 uppercase">
+          🥈 2nd place
+        </span>
       );
     }
 
     if (rank === 2) {
       return (
-        <div className="flex items-center gap-1 bg-amber-700/25 border border-amber-700/35 text-amber-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm shadow-amber-700/5">
-          🥉 3rd place (Bronze)
-        </div>
+        <span className="bg-orange-500/15 border border-orange-500/35 text-orange-500 px-2 py-0.5 rounded text-[8px] font-bold tracking-tight shrink-0 uppercase">
+          🥉 3rd place
+        </span>
       );
     }
 
@@ -268,29 +260,29 @@ export const ComparisonRace: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
-      {/* HEADER ROW */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-algo-border/40 pb-6">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-algo-text tracking-tight flex items-center gap-3">
-            <Zap className="text-algo-accent animate-pulse" size={32} />
-            Sorting Algorithm Duel
-          </h1>
-          <p className="text-algo-muted mt-2 text-sm font-medium">
-            Run sorting algorithms concurrently on the same dataset to visually race their time complexity bounds in real-time.
-          </p>
-        </div>
+    <div className="space-y-8 pb-12 font-sans max-w-5xl mx-auto animate-fade-in text-slate-800">
+      
+      {/* Title Header */}
+      <div className="space-y-1">
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
+          Sorting Algorithm Duel
+        </h1>
+        <p className="text-slate-500 text-xs font-normal">
+          A high-fidelity telemetry race track. Analyze time complexity dynamics by running sorting duels on stacked horizontal lanes.
+        </p>
+      </div>
 
-        {/* Global Controls */}
-        <div className="flex flex-wrap items-center gap-3 bg-algo-surface/60 backdrop-blur-md p-2 rounded-2xl border border-algo-border/60 shadow-lg">
-          
-          {/* Preset Selector */}
-          <div className="flex items-center gap-2 px-3 border-r border-algo-border/40">
-            <span className="text-[10px] font-bold text-algo-muted uppercase tracking-wider">Array:</span>
+      {/* Control Console */}
+      <div className="bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.015),0_6px_16px_rgba(0,0,0,0.015)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
+        
+        {/* Dataset Group */}
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Array Preset</span>
             <select
               value={presetType}
               onChange={(e) => setPresetType(e.target.value as DistributionType)}
-              className="bg-transparent text-xs font-bold text-algo-text outline-none cursor-pointer"
+              className="bg-slate-50 border border-slate-200 text-slate-800 outline-none cursor-pointer font-bold text-xs px-3 py-2 rounded-lg transition hover:bg-slate-100"
             >
               <option value="random">Random Mix</option>
               <option value="reversed">Reversed (Worst)</option>
@@ -299,107 +291,70 @@ export const ComparisonRace: React.FC = () => {
             </select>
           </div>
 
-          {/* Size Slider */}
-          <div className="flex items-center gap-2 px-3 border-r border-algo-border/40">
-            <span className="text-[10px] font-bold text-algo-muted uppercase tracking-wider">Size: {arraySize}</span>
-            <input 
-              type="range" 
-              min={8} 
-              max={25} 
-              value={arraySize}
-              onChange={(e) => setArraySize(parseInt(e.target.value))}
-              className="w-16 accent-algo-primary h-1 bg-algo-border rounded-lg cursor-pointer"
-            />
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Array Size: {arraySize}</span>
+            <div className="flex items-center h-8">
+              <input 
+                type="range" 
+                min={8} 
+                max={25} 
+                value={arraySize}
+                onChange={(e) => setArraySize(parseInt(e.target.value))}
+                className="w-32 accent-[#4f46e5] h-2 bg-slate-200 border border-slate-350/50 rounded-lg cursor-pointer appearance-none"
+              />
+            </div>
           </div>
+        </div>
 
-          {/* Speed Selector */}
-          <div className="flex items-center gap-2 px-3 border-r border-algo-border/40">
-            <Clock size={14} className="text-algo-muted" />
+        {/* Speed Group */}
+        <div className="space-y-1.5">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Racer Speed</span>
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 text-slate-850 px-3 py-2 rounded-lg text-xs font-bold">
+            <Clock size={13} className="text-slate-400" />
             <select
               value={speed}
               onChange={(e) => setSpeed(parseInt(e.target.value))}
-              className="bg-transparent text-xs font-bold text-algo-text outline-none cursor-pointer"
+              className="bg-transparent outline-none cursor-pointer font-bold text-xs"
             >
-              <option value="600">Slow</option>
-              <option value="300">Normal</option>
-              <option value="150">Fast</option>
-              <option value="50">Turbo</option>
+              <option value="600">Slow (600ms)</option>
+              <option value="300">Normal (300ms)</option>
+              <option value="150">Fast (150ms)</option>
+              <option value="50">Turbo (50ms)</option>
             </select>
           </div>
+        </div>
 
-          {/* Play/Pause Buttons */}
+        {/* Simulation Actions Group */}
+        <div className="flex items-center gap-2 self-end md:self-auto text-xs font-bold">
           <button 
             onClick={generateNewArray}
-            className="p-2 hover:bg-algo-surface-hover rounded-xl text-algo-muted hover:text-algo-text transition active:scale-95"
-            title="Generate New Shared Array"
+            className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 hover:text-slate-800 transition"
+            title="Generate New Dataset"
           >
-            <Shuffle size={16} />
+            <Shuffle size={14} />
           </button>
           
           <button 
             onClick={handleReset}
-            className="p-2 hover:bg-algo-surface-hover rounded-xl text-algo-muted hover:text-algo-text transition active:scale-95"
-            title="Reset Race Tracks"
+            className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 hover:text-slate-800 transition"
+            title="Reset Duel"
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={14} />
           </button>
           
           <button 
             onClick={handlePlayToggle}
-            className="flex items-center gap-1.5 px-4 py-2 bg-algo-primary hover:bg-algo-primary/95 text-white font-bold text-xs rounded-xl shadow-md shadow-algo-primary/10 transition active:scale-[0.97]"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#4f46e5] hover:bg-[#4f46e5]/90 text-white font-semibold text-xs rounded-lg transition active:scale-95 shadow-sm shadow-[#4f46e5]/10"
           >
-            {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
-            {isPlaying ? 'Pause' : 'Start Duel'}
+            {isPlaying ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}
+            {isPlaying ? 'Pause Duel' : 'Start Duel'}
           </button>
         </div>
+
       </div>
 
-      {/* TRACK BUILDER SECTION */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-        {selectedAlgos.map((algoId, idx) => (
-          <div key={idx} className="glass-panel rounded-xl p-3.5 flex items-center justify-between border border-algo-border/60">
-            <div className="flex items-center gap-2.5 w-full">
-              <span className="text-[10px] font-mono font-black text-white bg-algo-primary/80 px-2 py-1 rounded-lg">
-                TRACK {idx + 1}
-              </span>
-              <select
-                value={algoId}
-                onChange={(e) => handleAlgoSelect(idx, e.target.value)}
-                className="bg-transparent text-sm font-bold text-algo-text outline-none cursor-pointer w-full"
-              >
-                {sortingManifests.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
-            {selectedAlgos.length > 1 && (
-              <button 
-                onClick={() => removeAlgoTrack(idx)}
-                className="text-red-400 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition"
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
-          </div>
-        ))}
-        {selectedAlgos.length < 3 && (
-          <button
-            onClick={addAlgoTrack}
-            className="border-2 border-dashed border-algo-border/60 hover:border-algo-primary/50 text-algo-muted hover:text-algo-primary py-3.5 rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs transition duration-300 active:scale-98"
-          >
-            <Plus size={14} />
-            Add Racer Track
-          </button>
-        )}
-      </div>
-
-      {/* DUEL CANVA RACE TRACKS */}
-      <div className={cn(
-        "grid gap-6 items-start",
-        selectedAlgos.length === 1 && "grid-cols-1",
-        selectedAlgos.length === 2 && "grid-cols-1 lg:grid-cols-2",
-        selectedAlgos.length === 3 && "grid-cols-1 lg:grid-cols-3"
-      )}>
+      {/* HORIZONTAL DUEL RACE LANES */}
+      <div className="space-y-6">
         {runners.map((runner, idx) => {
           const hasFinished = finishOrder.includes(runner.algoId);
 
@@ -407,63 +362,100 @@ export const ComparisonRace: React.FC = () => {
             <div 
               key={idx} 
               className={cn(
-                "glass-panel rounded-2xl border flex flex-col h-[400px] overflow-hidden transition-all duration-500 relative",
-                runner.finished ? "border-algo-success/30 shadow-algo-success/5" : "border-algo-border"
+                "flex flex-col md:flex-row rounded-xl overflow-hidden border transition-all shadow-[0_1px_3px_rgba(0,0,0,0.015),0_6px_16px_rgba(0,0,0,0.015)] hover:shadow-md h-auto md:h-[160px]",
+                runner.finished ? "border-[#34c759]/40" : "border-slate-200/60"
               )}
             >
-              {/* Runner Title Header */}
-              <div className="px-5 py-4 border-b border-algo-border/40 bg-algo-surface/40 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-algo-text flex items-center gap-2">
-                    {runner.name}
-                  </h3>
-                  <span className="text-[10px] font-mono text-algo-muted uppercase tracking-wider">
-                    {runner.finished ? '🏁 Finished' : '🏃 Sorting...'}
-                  </span>
+              
+              {/* Telemetry panel (left side, 260px wide, dark technical slate) */}
+              <div className="w-full md:w-[260px] bg-slate-900 text-white p-5 flex flex-col justify-between shrink-0 border-r border-slate-800 relative">
+                
+                {/* Header: Track Indicator & Algo Dropdown */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-mono font-bold flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <select
+                      value={runner.algoId}
+                      onChange={(e) => handleAlgoSelect(idx, e.target.value)}
+                      className="bg-transparent text-white outline-none cursor-pointer font-bold text-sm hover:text-indigo-200 transition max-w-[150px] truncate"
+                    >
+                      {sortingManifests.map(m => (
+                        <option key={m.id} value={m.id} className="bg-slate-900 text-white">{m.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {selectedAlgos.length > 1 && (
+                    <button 
+                      onClick={() => removeAlgoTrack(idx)}
+                      className="text-slate-400 hover:text-white p-1 hover:bg-slate-850 rounded transition shrink-0"
+                      title="Remove Track"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
                 </div>
-                {hasFinished ? (
-                  getPodiumBadge(runner.algoId)
-                ) : (
-                  runner.finished && (
-                    <div className="text-[10px] font-mono text-algo-muted">Finished</div>
-                  )
-                )}
+
+                {/* Telemetry statistics (Compare, Swap, Write) */}
+                <div className="grid grid-cols-3 gap-2 border-t border-slate-800/80 pt-3.5 mt-3 md:mt-0">
+                  <div>
+                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">COMP</span>
+                    <span className="text-lg font-bold font-mono text-white">{runner.comparisons}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">SWAP</span>
+                    <span className="text-lg font-bold font-mono text-white">{runner.swaps}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">WRITE</span>
+                    <span className="text-lg font-bold font-mono text-white">{runner.writes}</span>
+                  </div>
+                </div>
+
               </div>
 
-              {/* Visualization Stage Container */}
-              <div className="flex-1 overflow-hidden p-6 relative flex items-center justify-center min-h-[220px]">
+              {/* Horizontal Visualizer Track (right side, flexible width, white/slate lane) */}
+              <div className="flex-1 bg-white/70 backdrop-blur-md p-4 flex items-center justify-center overflow-hidden min-h-[140px] md:min-h-0 relative">
+                
+                {/* Float Podium Badge in Finish Area */}
+                {hasFinished && (
+                  <div className="absolute top-3 right-3 z-10 animate-fade-in">
+                    {getPodiumBadge(runner.algoId)}
+                  </div>
+                )}
+
                 {runner.state ? (
                   <Stage 
                     state={runner.state} 
                     lastEvents={runner.events} 
-                    width={380} 
-                    height={180} 
+                    width={580} 
+                    height={110} 
                   />
                 ) : (
-                  <div className="text-xs text-algo-muted italic">Waiting to start...</div>
+                  <div className="text-xs text-slate-400 italic font-medium">Waiting...</div>
                 )}
-              </div>
-
-              {/* Statistics Footer */}
-              <div className="bg-algo-surface/40 border-t border-algo-border/40 p-4 grid grid-cols-3 gap-2 text-center text-xs shrink-0 font-mono">
-                <div className="bg-algo-bg/50 border border-algo-border/30 p-2 rounded-xl">
-                  <div className="text-[10px] text-algo-muted mb-0.5">Comparisons</div>
-                  <div className="font-extrabold text-algo-text">{runner.comparisons}</div>
-                </div>
-                <div className="bg-algo-bg/50 border border-algo-border/30 p-2 rounded-xl">
-                  <div className="text-[10px] text-algo-muted mb-0.5">Swaps</div>
-                  <div className="font-extrabold text-algo-text">{runner.swaps}</div>
-                </div>
-                <div className="bg-algo-bg/50 border border-algo-border/30 p-2 rounded-xl">
-                  <div className="text-[10px] text-algo-muted mb-0.5">Writes</div>
-                  <div className="font-extrabold text-algo-text">{runner.writes}</div>
-                </div>
               </div>
 
             </div>
           );
         })}
       </div>
+
+      {/* Add Track Button (if < 3 tracks) */}
+      {selectedAlgos.length < 3 && (
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={addAlgoTrack}
+            className="border border-dashed border-slate-350 hover:border-slate-500 hover:bg-slate-50 text-slate-500 hover:text-slate-800 px-6 py-2.5 rounded-lg flex items-center justify-center gap-1.5 font-semibold text-xs transition duration-200"
+          >
+            <Plus size={13} />
+            Add Race Track Lane
+          </button>
+        </div>
+      )}
+
     </div>
   );
 };

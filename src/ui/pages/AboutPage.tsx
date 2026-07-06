@@ -4,110 +4,109 @@ import { ArrowLeft, Sparkles, Cpu, HelpCircle, Code, Volume2, Award, Share2 } fr
 
 export const AboutPage: React.FC = () => {
   return (
-    <div className="max-w-4xl mx-auto py-12 px-6 space-y-12 animate-fade-in text-algo-text pb-16">
+    <div className="max-w-4xl mx-auto py-10 px-4 space-y-12 animate-fade-in text-slate-800 pb-16 font-sans">
       
       {/* Header */}
-      <div className="flex items-center gap-5 border-b border-algo-border/40 pb-6">
+      <div className="flex items-center gap-4 border-b border-slate-100 pb-5">
         <Link 
           to="/" 
-          className="p-3 bg-algo-surface hover:bg-algo-surface-hover border border-algo-border rounded-xl transition-all duration-300 text-algo-text shadow-sm hover:scale-105 active:scale-95"
+          className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 hover:text-slate-900 transition-colors"
+          title="Back"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
         </Link>
         <div>
-          <h1 className="inline-block text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-algo-text to-algo-primary pb-3 pr-3 pt-1 px-1 leading-normal">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
             About AlgoVista
           </h1>
-          <p className="text-xs font-mono text-algo-muted font-bold tracking-widest uppercase mt-1">
+          <p className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider mt-0.5">
             Visual Educational Platform
           </p>
         </div>
       </div>
 
       {/* Hero Intro */}
-      <section className="glass-panel border border-algo-border/50 rounded-2xl p-8 relative overflow-hidden space-y-4 shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-algo-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-algo-primary/15 border border-algo-primary/30 rounded-full text-[10px] font-semibold text-algo-primary">
+      <section className="bg-white/70 backdrop-blur-md border border-slate-200/60 rounded-xl p-6 md:p-8 space-y-4">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded text-[10px] font-semibold text-slate-600">
           <Sparkles size={10} />
           Version 1.4.0 (Premium EdTech Suite)
         </div>
-        <p className="text-base text-algo-muted leading-relaxed font-semibold">
+        <p className="text-sm md:text-base text-slate-500 leading-relaxed font-normal max-w-3xl">
           AlgoVista is an interactive visual sandbox designed to deconstruct complex algorithms step-by-step. 
-          Created by <strong className="text-algo-text">Chirag P Patil</strong>, the platform serves as a modern educational tool for students, teachers, and developers to explore data structures, visual invariants, and computational runtimes.
+          Created by <strong>Chirag P Patil</strong>, the platform serves as a modern educational tool for students, teachers, and developers to explore data structures, visual invariants, and computational runtimes.
         </p>
       </section>
 
       {/* Interactive EdTech Features Section */}
-      <section className="space-y-6">
-        <h2 className="text-xl font-extrabold text-algo-text flex items-center gap-2">
-          <Sparkles className="text-algo-primary" size={20} />
-          Premium EdTech Visual Suite
+      <section className="space-y-5">
+        <h2 className="text-lg font-semibold text-slate-900">
+          Educational Visual Suite
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Card 1: Active Recall Quizzes */}
-          <div className="glass-panel border border-algo-border/40 p-5 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-algo-primary/10 rounded-xl w-fit text-algo-primary">
-              <HelpCircle size={20} />
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <div className="p-2 bg-slate-100 rounded-lg w-fit text-slate-600">
+              <HelpCircle size={18} />
             </div>
-            <h3 className="font-extrabold text-base text-algo-text">Socratic Active Recall Quizzes</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-semibold">
+            <h3 className="font-semibold text-sm text-slate-900">Socratic Active Recall Quizzes</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Intercepts playback at designated checkpoints with multiple-choice questions. Locks visual execution to engage students actively, breaking the "illusion of competence" before resuming.
             </p>
           </div>
 
           {/* Card 2: Code Playground */}
-          <div className="glass-panel border border-algo-border/40 p-5 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-purple-500/10 rounded-xl w-fit text-purple-400">
-              <Code size={20} />
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <div className="p-2 bg-slate-100 rounded-lg w-fit text-slate-600">
+              <Code size={18} />
             </div>
-            <h3 className="font-extrabold text-base text-algo-text">Multi-Language Code Playground</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-semibold">
+            <h3 className="font-semibold text-sm text-slate-900">Multi-Language Code Playground</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Switch code tracks between Pseudocode, JavaScript, Python, C++, and Java on the fly. A line-by-line syntax translator keeps highlight lines synced. Supports editable editor panels for visual hot-reloads.
             </p>
           </div>
 
           {/* Card 3: Sound Synthesizer */}
-          <div className="glass-panel border border-algo-border/40 p-5 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-emerald-500/10 rounded-xl w-fit text-emerald-400">
-              <Volume2 size={20} />
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <div className="p-2 bg-slate-100 rounded-lg w-fit text-slate-600">
+              <Volume2 size={18} />
             </div>
-            <h3 className="font-extrabold text-base text-algo-text">Auditory Sound Synthesizer</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-semibold">
+            <h3 className="font-semibold text-sm text-slate-900">Auditory Sound Synthesizer</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Uses the browser's native Web Audio API to play real-time synthesizer frequencies. Maps element values to pitches and operations (compares, swaps, writes, success) to specific sound wave formats.
             </p>
           </div>
 
           {/* Card 4: Comparative Races */}
-          <div className="glass-panel border border-algo-border/40 p-5 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-amber-500/10 rounded-xl w-fit text-amber-500">
-              <Award size={20} />
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <div className="p-2 bg-slate-100 rounded-lg w-fit text-slate-600">
+              <Award size={18} />
             </div>
-            <h3 className="font-extrabold text-base text-algo-text">Comparative Algo-Races</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-semibold">
+            <h3 className="font-semibold text-sm text-slate-900">Comparative Algo-Races</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Start synchronous duels with up to 3 sorting algorithms running on a shared array. Features dynamic distribution presets (random, reversed, nearly sorted, duplicates) and awards Gold, Silver, and Bronze rankings.
             </p>
           </div>
 
           {/* Card 5: Classroom sharing */}
-          <div className="glass-panel border border-algo-border/40 p-5 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-sky-500/10 rounded-xl w-fit text-sky-400">
-              <Share2 size={20} />
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <div className="p-2 bg-slate-100 rounded-lg w-fit text-slate-600">
+              <Share2 size={18} />
             </div>
-            <h3 className="font-extrabold text-base text-algo-text">Classroom Presentation Mode</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-semibold">
+            <h3 className="font-semibold text-sm text-slate-900">Classroom Presentation Mode</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Supports serialization of custom visualizer inputs into Base64 query parameters. Instantly generates shareable URL links for teachers to distribute custom configurations to classrooms.
             </p>
           </div>
 
           {/* Card 6: Dynamic Glob Registry */}
-          <div className="glass-panel border border-algo-border/40 p-5 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-pink-500/10 rounded-xl w-fit text-pink-400">
-              <Cpu size={20} />
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <div className="p-2 bg-slate-100 rounded-lg w-fit text-slate-600">
+              <Cpu size={18} />
             </div>
-            <h3 className="font-extrabold text-base text-algo-text">Modular Auto-Registry</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-semibold">
+            <h3 className="font-semibold text-sm text-slate-900">Modular Auto-Registry</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Powered by a modular autoloader executing glob parameters. Discovers and registers custom algorithm modules across sorting, graphs, numeric calculations, and string search files automatically.
             </p>
           </div>
@@ -116,26 +115,26 @@ export const AboutPage: React.FC = () => {
       </section>
 
       {/* Details Grid (Core specs) */}
-      <section className="space-y-6">
-        <h2 className="text-lg font-bold text-algo-text">Core Infrastructure</h2>
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-slate-900">Core Infrastructure</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-algo-surface/30 border border-algo-border/40 p-5 rounded-xl space-y-2">
-            <h3 className="font-bold text-sm text-algo-text">Visual Telemetry</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-medium">
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-1.5 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <h3 className="font-semibold text-sm text-slate-800">Visual Telemetry</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Track local state variables, indices compare/swap events, operation statistics, and canvas nodes in real-time.
             </p>
           </div>
 
-          <div className="bg-algo-surface/30 border border-algo-border/40 p-5 rounded-xl space-y-2">
-            <h3 className="font-bold text-sm text-algo-text">Stage Visualizers</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-medium">
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-1.5 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <h3 className="font-semibold text-sm text-slate-800">Stage Visualizers</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Supports diverse structures including 1D Arrays, 2D Matrices, Stack/Queue animations, and dynamic D3 SVG Graph layouts.
             </p>
           </div>
 
-          <div className="bg-algo-surface/30 border border-algo-border/40 p-5 rounded-xl space-y-2">
-            <h3 className="font-bold text-sm text-algo-text">Cinema Focus Mode</h3>
-            <p className="text-xs text-algo-muted leading-relaxed font-medium">
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-5 rounded-xl space-y-1.5 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+            <h3 className="font-semibold text-sm text-slate-800">Cinema Focus Mode</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Toggle fullscreen visualization states to hide side panels and expand active visual canvases to 100% viewport width.
             </p>
           </div>
@@ -143,9 +142,9 @@ export const AboutPage: React.FC = () => {
       </section>
 
       {/* Mission Statement */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-bold text-algo-text">Mission Statement</h2>
-        <p className="text-sm text-algo-muted leading-relaxed font-semibold">
+      <section className="space-y-3.5 bg-white/70 backdrop-blur-md border border-slate-200/60 rounded-xl p-6 md:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+        <h2 className="text-base font-semibold text-slate-900">Mission Statement</h2>
+        <p className="text-sm text-slate-500 leading-relaxed font-normal">
           Computational logic can feel abstract when locked behind compiler logs and complex notations. AlgoVista bridges this gap by translating logic into interactive graphic stages. 
           By offering granular controls, interactive recall tools, multi-algorithm duels, and sharing channels, it strives to build deep intuitive understanding for learners worldwide.
         </p>

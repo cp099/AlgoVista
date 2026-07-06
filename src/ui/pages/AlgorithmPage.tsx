@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Settings, PlayCircle, Award, Cpu, Activity, Maximize2, Minimize2, Share2, Check, ArrowLeft } from 'lucide-react';
+import { Settings, Share2, Check, ArrowLeft } from 'lucide-react';
 import { cn } from '@utils/cn';
 
 import { AlgorithmEngine } from '@core/engine/AlgorithmEngine';
@@ -10,7 +11,6 @@ import { PlaybackControls } from '@ui/controls/PlaybackControls';
 import { InputEditor } from '@ui/controls/InputEditor';
 import { TheoryView } from '@ui/views/TheoryView';
 import { CodePlayground } from '@ui/views/CodePlayground';
-import { InteractiveQuiz } from '@ui/views/InteractiveQuiz';
 import { getQuizForAlgorithm, QuizQuestion } from '@utils/quizRegistry';
 import { playTone } from '@utils/audio';
 import { AlgoState, AlgoEvent } from '@core/types';
@@ -25,12 +25,17 @@ export const AlgorithmPage = () => {
   const [events, setEvents] = useState<AlgoEvent[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showInput, setShowInput] = useState(false);
-  const [currentInputs, setCurrentInputs] = useState<Record<string, any>>({});
-  const [speed, setSpeed] = useState(settings.defaultSpeed); // Initialized with default settings
-  const [showGrid, setShowGrid] = useState(settings.defaultGrid); // Initialized with default settings
+  const [currentInputs, setCurrentInputs] = useState<Record<string, unknown>>({});
+  const [speed, setSpeed] = useState(settings.defaultSpeed);
+  const [showGrid, setShowGrid] = useState(settings.defaultGrid);
+
   
+  // -- ENGINE COPY STATES FOR LINT SAFETY --
+  const [currentStep, setCurrentStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(1);
+  const [engineStatus, setEngineStatus] = useState('IDLE');
+
   // -- PREMIUM FEATURE STATES --
-  const [isCinemaMode, setIsCinemaMode] = useState(false);
   const [isShareCopied, setIsShareCopied] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<QuizQuestion | null>(null);
   const [triggeredQuizzes, setTriggeredQuizzes] = useState<Record<string, boolean>>({});
@@ -50,6 +55,7 @@ export const AlgorithmPage = () => {
     setSpeed(settings.defaultSpeed);
     if (isPlaying && engineRef.current) {
       engineRef.current.play(settings.defaultSpeed);
+      setEngineStatus(engineRef.current.status);
     }
   }, [settings.defaultSpeed]);
 
@@ -62,23 +68,25 @@ export const AlgorithmPage = () => {
         setEvents(step.events);
       }
       setIsPlaying(engine.status === 'RUNNING');
+      setCurrentStep(engine.currentStepIndex);
+      setTotalSteps(engine.totalSteps);
+      setEngineStatus(engine.status);
     });
     engineRef.current = engine;
     return () => engine.pause();
   }, []);
 
-  // -- 2. LOAD ALGORITHM & PARSE URL CONFIGS --
+  // -- 2. LOAD ALGORITHM, SYNCHRONIZE INPUTS & ENGINE --
+  const prevIdRef = useRef('');
   useEffect(() => {
     if (id && engineRef.current) {
       const algo = getAlgorithm(id);
       if (algo) {
-        const defaults: Record<string, any> = {};
-        
-        // Parse search parameters for Classroom Presentation mode
+        const defaults: Record<string, unknown> = {};
         const searchParams = new URLSearchParams(window.location.search);
         
         algo.manifest.inputs.forEach(i => {
-          let paramValue: any = null;
+          let paramValue: unknown = null;
           const rawParam = searchParams.get(i.id);
           const rawBase64 = searchParams.get(`${i.id}_b64`);
           
@@ -86,7 +94,7 @@ export const AlgorithmPage = () => {
             try {
               paramValue = JSON.parse(atob(rawBase64));
             } catch (e) {
-              console.error('Failed to parse base64 parameter:', e);
+              console.error('Failed to serialize input parameter:', e);
             }
           } else if (rawParam) {
             if (i.type === 'array') {
@@ -100,16 +108,34 @@ export const AlgorithmPage = () => {
           
           defaults[i.id] = paramValue !== null ? paramValue : i.defaultValue;
         });
+
+        const hasLoadedInputs = Object.keys(currentInputs).length > 0;
+        const inputsToLoad = hasLoadedInputs ? currentInputs : defaults;
+
+        if (!hasLoadedInputs) {
+          setCurrentInputs(defaults);
+        }
+
+        if (prevIdRef.current !== id) {
+          setTriggeredQuizzes({});
+          setActiveQuiz(null);
+          prevIdRef.current = id;
+        }
+
+        engineRef.current.load(algo, inputsToLoad);
         
-        // Reset quiz triggers for the new algorithm run
-        setTriggeredQuizzes({});
-        setActiveQuiz(null);
-        
-        setCurrentInputs(defaults);
-        engineRef.current.load(algo, defaults);
+        // Sync playback states
+        const step = engineRef.current.getCurrentStep();
+        if (step) {
+          setState(step.snapshot);
+          setEvents(step.events);
+        }
+        setCurrentStep(engineRef.current.currentStepIndex);
+        setTotalSteps(engineRef.current.totalSteps);
+        setEngineStatus(engineRef.current.status);
       }
     }
-  }, [id]);
+  }, [id, currentInputs]);
 
   // -- 3. SOUND SYNTHESIZER SYNC --
   useEffect(() => {
@@ -138,32 +164,71 @@ export const AlgorithmPage = () => {
     if (isPlaying && quizzes.length > 0) {
       const quiz = quizzes.find(q => q.triggerStepIndex === currentStepIndex && !triggeredQuizzes[q.id]);
       if (quiz) {
-        // Intercept execution and pause
         engineRef.current.pause();
         setIsPlaying(false);
+        setEngineStatus(engineRef.current.status);
         setActiveQuiz(quiz);
         setTriggeredQuizzes(prev => ({ ...prev, [quiz.id]: true }));
       }
     }
   }, [state, isPlaying, id, triggeredQuizzes, settings.quizzesEnabled]);
 
-  // -- 5. SPEED CONTROL CHANGE --
+  // -- 5. PLAYBACK CONTROLS --
   const handleSpeedChange = (newSpeed: number) => {
     setSpeed(newSpeed);
     if (isPlaying && engineRef.current) {
       engineRef.current.play(newSpeed);
+      setEngineStatus(engineRef.current.status);
     }
   };
 
   const handlePlay = () => {
-    engineRef.current?.play(speed);
+    if (engineRef.current) {
+      engineRef.current.play(speed);
+      setEngineStatus(engineRef.current.status);
+    }
+  };
+
+  const handlePause = () => {
+    if (engineRef.current) {
+      engineRef.current.pause();
+      setEngineStatus(engineRef.current.status);
+    }
+  };
+
+  const handleStepForward = () => {
+    if (engineRef.current) {
+      engineRef.current.stepForward();
+      setCurrentStep(engineRef.current.currentStepIndex);
+    }
+  };
+
+  const handleStepBackward = () => {
+    if (engineRef.current) {
+      engineRef.current.stepBackward();
+      setCurrentStep(engineRef.current.currentStepIndex);
+    }
   };
 
   const handleSeek = (index: number) => {
-    engineRef.current?.seek(index);
+    if (engineRef.current) {
+      engineRef.current.seek(index);
+      setCurrentStep(engineRef.current.currentStepIndex);
+    }
   };
 
-  // -- 6. COPY SHAREABLE CONFIG LINK --
+  const handleReset = () => {
+    if (engineRef.current) {
+      engineRef.current.reset();
+      setTriggeredQuizzes({});
+      setActiveQuiz(null);
+      setCurrentStep(engineRef.current.currentStepIndex);
+      setTotalSteps(engineRef.current.totalSteps);
+      setEngineStatus(engineRef.current.status);
+    }
+  };
+
+  // -- 6. COPY LINK --
   const handleShareConfig = () => {
     const params = new URLSearchParams();
     Object.entries(currentInputs).forEach(([k, v]) => {
@@ -181,7 +246,7 @@ export const AlgorithmPage = () => {
     setTimeout(() => setIsShareCopied(false), 2000);
   };
 
-  // -- 7. HANDLE RESIZE --
+  // -- 7. RESIZE --
   useLayoutEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -200,174 +265,160 @@ export const AlgorithmPage = () => {
       clearTimeout(timeout);
       window.removeEventListener('resize', updateSize);
     };
-  }, [state, isCinemaMode]); // Re-measure size on state and cinema mode transitions!
+  }, [state]);
 
-  if (!id) return <div className="text-algo-muted p-8 text-center italic">Select an algorithm from the sidebar to begin.</div>;
+  if (!id) return <div className="text-slate-400 p-8 text-center italic font-sans text-xs">Select an algorithm to begin.</div>;
   const algo = getAlgorithm(id);
   const algoManifest = algo?.manifest;
-  const engine = engineRef.current;
-  const currentStep = engine?.currentStepIndex || 0;
-  const totalSteps = engine?.totalSteps || 1;
 
   if (!algoManifest) {
-    return <div className="text-algo-muted p-8 text-center">Algorithm "{id}" not found in registry.</div>;
+    return <div className="text-slate-400 p-8 text-center font-sans text-xs">Algorithm "{id}" not found.</div>;
   }
 
+
+
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
+    <div className="space-y-6 pb-12 font-sans animate-fade-in text-slate-800">
       
-      {/* BACK BUTTON */}
-      <div className="flex items-center shrink-0">
+      {/* Category Link Breadcrumb */}
+      <div className="flex items-center">
         <Link 
           to={`/category/${algoManifest.category.toLowerCase()}`}
-          className="flex items-center gap-1.5 text-xs font-bold text-algo-muted hover:text-algo-primary transition duration-300 group"
+          className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-900 transition-colors"
         >
-          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-          Back to {algoManifest.category} Suite
+          <ArrowLeft size={13} />
+          {algoManifest.category} Suite
         </Link>
       </div>
 
-      {/* HEADER SECTION */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-algo-border/40 pb-6">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-algo-text tracking-tight flex items-center gap-3">
-            <Cpu className="text-algo-primary animate-pulse" size={32} />
+      {/* Header Info */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
             {algoManifest.name}
           </h1>
-          <p className="text-algo-muted mt-2 flex items-center gap-2 font-medium">
-            <span className="px-2.5 py-0.5 bg-algo-primary/10 border border-algo-primary/20 rounded-full text-xs font-semibold text-algo-primary">
+          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
               {algoManifest.difficulty}
             </span>
-            <span className="opacity-40">•</span>
-            <span className="text-sm">{algoManifest.category}</span>
-          </p>
+            <span>•</span>
+            <span>{algoManifest.category.toUpperCase()}</span>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2.5">
+        
+        {/* Right side global actions */}
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
           <button 
             onClick={handleShareConfig}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl border border-algo-border transition-all duration-300 shadow-sm active:scale-[0.97]",
-              isShareCopied 
-                ? "bg-algo-success/15 border-algo-success text-algo-success" 
-                : "bg-algo-surface hover:bg-algo-surface-hover text-algo-text"
+              "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95",
+              isShareCopied && "border-[#34c759]/50 text-[#34c759] bg-[#34c759]/5"
             )}
-            title="Copy shareable link with current configuration parameters"
           >
-            {isShareCopied ? <Check size={16} /> : <Share2 size={16} />}
-            {isShareCopied ? 'Link Copied!' : 'Share Config'}
-          </button>
-          
-          <button 
-            onClick={() => setIsCinemaMode(!isCinemaMode)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-algo-surface hover:bg-algo-surface-hover text-sm font-bold rounded-xl border border-algo-border transition-all duration-300 text-algo-text shadow-sm active:scale-[0.97]"
-            title={isCinemaMode ? "Exit Cinema Focus Mode" : "Activate Cinema Focus Mode"}
-          >
-            {isCinemaMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            {isCinemaMode ? 'Exit Cinema' : 'Cinema Mode'}
+            {isShareCopied ? <Check size={14} /> : <Share2 size={14} />}
+            {isShareCopied ? 'Copied' : 'Share'}
           </button>
 
           {algoManifest.inputs && algoManifest.inputs.length > 0 && (
             <button 
               onClick={() => setShowInput(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-algo-surface hover:bg-algo-surface-hover text-sm font-bold rounded-xl border border-algo-border transition-all duration-300 text-algo-text shadow-sm active:scale-[0.97]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95"
             >
-              <Settings size={16} />
-              Configure
+              <Settings size={14} />
+              Configure Inputs
             </button>
           )}
-          
-          <button 
-            onClick={handlePlay}
-            className="flex items-center gap-2 px-5 py-2.5 bg-algo-primary hover:bg-algo-primary/95 hover:opacity-95 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg shadow-algo-primary/20 active:scale-[0.97]"
-          >
-            <PlayCircle size={16} />
-            Run Visualization
-          </button>
         </div>
       </div>
 
-      {/* DASHBOARD SPLIT WORKSPACE */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start w-full relative">
-        
-        {/* LEFT COLUMN: THE VISUALIZATION CANVAS */}
-        <div className={cn(
-          "w-full transition-all duration-500 ease-in-out space-y-6 shrink-0",
-          isCinemaMode ? "lg:w-full" : "lg:w-2/3"
-        )}>
-          <div className="glass-panel border border-algo-border rounded-2xl shadow-xl flex flex-col h-[520px] relative overflow-hidden">
+      {/* Main Single Page Workspace Grid: 2-Column top panel stack */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
+        {/* Left Column: Visualizer Stage Container */}
+        <div className="w-full lg:w-2/3 space-y-4 shrink-0">
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.015),0_6px_16px_rgba(0,0,0,0.015)] flex flex-col h-[500px] relative overflow-hidden">
             
-            {/* Status Pill (Floating at top showing live explanation) */}
-            <div className="absolute top-4 left-4 right-4 text-center z-20 pointer-events-none">
-              <div className="inline-block px-5 py-2 rounded-full border border-algo-border/40 text-sm font-semibold text-algo-primary backdrop-blur-xl bg-algo-surface/85 shadow-md">
+            {/* Overlay context message */}
+            <div className="absolute top-4 left-4 right-4 text-center z-10 pointer-events-none">
+              <div className="inline-block px-4 py-1.5 rounded-lg border border-slate-100 text-xs font-semibold text-slate-700 bg-white/95 shadow-sm max-w-[85%] truncate">
                 {state?.context.message || "Ready to run"}
               </div>
             </div>
             
-            {/* CANVAS AREA */}
+            {/* Stage Canvas */}
             <div 
               ref={containerRef} 
               className={cn(
-                "flex-1 overflow-hidden relative transition-all duration-500",
+                "flex-1 overflow-hidden relative transition-colors",
                 showGrid 
-                  ? "bg-[linear-gradient(to_right,rgba(99,102,241,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.04)_1px,transparent_1px)] bg-[size:20px_20px] bg-algo-bg/30"
-                  : "bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(99,102,241,0.08),rgba(255,255,255,0))]"
+                  ? "bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:24px_24px]"
+                  : "bg-slate-50/20"
               )}
             >
-              {/* Grid Toggle Floating Button */}
-              <div className="absolute top-4 right-4 z-30">
+              {/* Floating grid toggler */}
+              <div className="absolute top-4 right-4 z-20">
                 <button 
                   onClick={() => setShowGrid(!showGrid)}
                   className={cn(
-                    "px-3 py-1.5 rounded-xl border text-xs font-mono font-bold shadow-md transition-all duration-300 active:scale-95 flex items-center gap-1.5 bg-algo-surface/90 border-algo-border/80 text-algo-muted hover:text-algo-text",
-                    showGrid && "border-algo-primary/40 text-algo-primary bg-algo-primary/10 shadow-inner"
+                    "px-2.5 py-1.5 rounded-lg border text-[10px] font-mono font-semibold shadow-xs transition active:scale-95 bg-white border-slate-200 text-slate-500 hover:text-slate-800",
+                    showGrid && "border-slate-350 text-slate-800 bg-slate-50"
                   )}
                 >
-                  <span className={cn("w-1.5 h-1.5 rounded-full", showGrid ? "bg-algo-primary animate-pulse" : "bg-algo-muted/60")} />
                   GRID: {showGrid ? 'ON' : 'OFF'}
                 </button>
               </div>
 
-              {/* Socratic Quiz Overlay */}
+              {/* Concept Quiz Overlay */}
               {activeQuiz && (
-                <InteractiveQuiz 
-                  question={activeQuiz}
-                  onCorrect={() => {
-                    // correct answer visual splash
-                  }}
-                  onClose={() => {
-                    setActiveQuiz(null);
-                    // resume playback automatically
-                    setTimeout(() => {
-                      engineRef.current?.play(speed);
-                      setIsPlaying(true);
-                    }, 50);
-                  }}
-                />
+                <div className="absolute inset-0 bg-white/85 backdrop-blur-xs z-30 flex items-center justify-center p-6">
+                  <div className="bg-white border border-slate-200 shadow-xl rounded-xl p-6 max-w-md space-y-4">
+                    <h3 className="font-semibold text-sm text-slate-800">Concept Quiz</h3>
+                    <p className="text-xs text-slate-500">{activeQuiz.question}</p>
+                    <div className="space-y-1.5">
+                      {activeQuiz.options.map((opt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            if (i === activeQuiz.correctIndex) {
+                              setActiveQuiz(null);
+                              setTimeout(() => {
+                                handlePlay();
+                              }, 50);
+                            } else {
+                              alert("Incorrect option. Try again!");
+                            }
+                          }}
+                          className="w-full text-left p-2.5 text-xs border border-slate-100 hover:bg-slate-50 rounded-lg transition"
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               )}
 
+              {/* Stage Canvas Renderer */}
               <div className="absolute inset-0 p-8 pt-16 flex items-center justify-center">
                 <Stage 
                   state={state} 
                   lastEvents={events} 
                   width={dimensions.width - 64} 
                   height={dimensions.height - 80} 
+                  algoId={id}
+                  category={algoManifest.category}
                 />
               </div>
             </div>
 
-            {/* INTEGRATED SCRUBBER / PLAYBACK CONTROLS */}
-            <div className="border-t border-algo-border/50 bg-algo-surface/90 backdrop-blur-md p-4 shrink-0">
+            {/* Playback Controls Footer */}
+            <div className="border-t border-slate-100 p-4 shrink-0 bg-white">
               <PlaybackControls 
                 isPlaying={isPlaying}
                 onPlay={handlePlay}
-                onPause={() => engineRef.current?.pause()}
-                onNext={() => engineRef.current?.stepForward()}
-                onPrev={() => engineRef.current?.stepBackward()}
-                onReset={() => {
-                  engineRef.current?.reset();
-                  setTriggeredQuizzes({});
-                  setActiveQuiz(null);
-                }}
+                onPause={handlePause}
+                onNext={handleStepForward}
+                onPrev={handleStepBackward}
+                onReset={handleReset}
                 onSeek={handleSeek}
                 progress={totalSteps > 1 ? currentStep / (totalSteps - 1) : 0}
                 totalSteps={totalSteps}
@@ -379,106 +430,98 @@ export const AlgorithmPage = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: MULTI-LANGUAGE CODE PLAYGROUND & VARIABLE TRACKER */}
-        <div className={cn(
-          "w-full transition-all duration-500 ease-in-out space-y-6 shrink-0",
-          isCinemaMode ? "lg:w-0 lg:max-h-0 lg:overflow-hidden lg:opacity-0 lg:pointer-events-none lg:m-0 lg:p-0" : "lg:w-1/3"
-        )}>
+        {/* Right Column: Code companion & Variables stacked vertically */}
+        <div className="w-full lg:w-1/3 space-y-5 shrink-0 flex flex-col justify-between">
           
-          {/* INTERACTIVE CODE PLAYGROUND */}
+          {/* Multi-language Code Playground */}
           <CodePlayground 
             pseudocode={algoManifest.pseudocode}
             activeLine={state?.context.pseudocodeLine}
             onCodeMutation={(mutated) => {
-              // Custom code hot reload handler
-              console.log("Hot-reloaded code logic:", mutated);
-              // Simply restart visualizer with visual confirm
-              engineRef.current?.reset();
+              console.log("Hot-reloaded code mutation:", mutated);
+              handleReset();
             }}
           />
 
-          {/* MEMORY VARIABLES CARD */}
-          <div className="glass-panel border border-algo-border rounded-2xl p-5 shadow-lg flex flex-col h-[175px]">
-            <h3 className="text-xs font-bold text-algo-muted uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Award size={14} className="text-algo-primary" />
-              Runtime Variables (State)
+          {/* Live Variables Tracker */}
+          <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.015),0_6px_16px_rgba(0,0,0,0.015)] flex flex-col h-[180px]">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3.5 shrink-0">
+              Runtime Variables
             </h3>
             
-            <div className="flex-1 overflow-y-auto font-mono text-sm space-y-2 pr-2 scrollbar-thin scrollbar-thumb-algo-border scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto font-mono text-xs space-y-2 pr-2 scrollbar-thin">
               {state?.context.variables && Object.keys(state.context.variables).length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(state.context.variables).map(([k, v]) => (
-                    <div key={k} className="bg-algo-bg/50 border border-algo-border/40 px-3 py-2 rounded-xl flex justify-between items-center">
-                      <span className="text-algo-primary font-bold text-xs">{k}</span>
-                      <span className="font-extrabold text-xs text-algo-text">{String(v)}</span>
+                    <div key={k} className="bg-slate-50 border border-slate-100 px-3 py-2 rounded-lg flex justify-between items-center">
+                      <span className="text-[#0071e3] font-semibold">{k}</span>
+                      <span className="font-semibold text-slate-700">{String(v)}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-xs text-algo-muted italic h-full flex items-center justify-center">
+                <div className="text-[11px] text-slate-400 italic h-full flex items-center justify-center">
                   No active local variables
                 </div>
               )}
             </div>
           </div>
 
-          {/* DIAGNOSTICS TELEMETRY CARD */}
+          {/* Diagnostics Telemetry */}
           {settings.debugMode && (
-            <div className="glass-panel border border-algo-border rounded-2xl p-5 shadow-lg flex flex-col space-y-3 animate-fade-in">
-              <h3 className="text-xs font-bold text-algo-muted uppercase tracking-widest flex items-center gap-2">
-                <Activity size={14} className="text-algo-primary animate-pulse" />
+            <div className="bg-white/70 backdrop-blur-md border border-slate-200/60 rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.015),0_6px_16px_rgba(0,0,0,0.015)] flex flex-col space-y-3">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 Diagnostics Telemetry
               </h3>
-              <div className="grid grid-cols-2 gap-2.5 font-mono text-[10px]">
-                <div className="bg-algo-bg/50 border border-algo-border/40 p-2 rounded-xl">
-                  <div className="text-algo-muted mb-0.5 font-semibold">Timeline Step</div>
-                  <div className="font-extrabold text-algo-text">{currentStep + 1} / {totalSteps}</div>
+              <div className="grid grid-cols-2 gap-2 font-mono text-[9px] text-slate-600">
+                <div className="bg-slate-50 border border-slate-100 p-2 rounded-lg">
+                  <div className="text-slate-400 mb-0.5 font-semibold">Step Index</div>
+                  <div className="font-bold text-slate-800">{currentStep + 1} / {totalSteps}</div>
                 </div>
-                <div className="bg-algo-bg/50 border border-algo-border/40 p-2 rounded-xl">
-                  <div className="text-algo-muted mb-0.5 font-semibold">Speed Delay</div>
-                  <div className="font-extrabold text-algo-text">{speed}ms</div>
+                <div className="bg-slate-50 border border-slate-100 p-2 rounded-lg">
+                  <div className="text-slate-400 mb-0.5 font-semibold">Step Delay</div>
+                  <div className="font-bold text-slate-800">{speed}ms</div>
                 </div>
-                <div className="bg-algo-bg/50 border border-algo-border/40 p-2 rounded-xl">
-                  <div className="text-algo-muted mb-0.5 font-semibold">Engine Status</div>
-                  <div className="font-extrabold text-algo-primary uppercase">{engine?.status || 'IDLE'}</div>
+                <div className="bg-slate-50 border border-slate-100 p-2 rounded-lg">
+                  <div className="text-slate-400 mb-0.5 font-semibold">Engine Status</div>
+                  <div className="font-bold text-slate-800 uppercase">{engineStatus}</div>
                 </div>
-                <div className="bg-algo-bg/50 border border-algo-border/40 p-2 rounded-xl">
-                  <div className="text-algo-muted mb-0.5 font-semibold">Structures</div>
-                  <div className="font-extrabold text-algo-text truncate">
+                <div className="bg-slate-50 border border-slate-100 p-2 rounded-lg">
+                  <div className="text-slate-400 mb-0.5 font-semibold">Structure ID</div>
+                  <div className="font-bold text-slate-800 truncate">
                     {state ? Object.values(state.structures).map(s => s.id).join(', ') : 'None'}
                   </div>
                 </div>
               </div>
             </div>
           )}
-
         </div>
-
       </div>
 
-      {/* DETAILED EDUCATION THEORY & COMPLEXITIES */}
-      <div className={cn(
-        "border-t border-algo-border/30 pt-8 transition-all duration-500 ease-in-out",
-        isCinemaMode ? "opacity-0 max-h-0 overflow-hidden pt-0 mt-0 border-transparent pointer-events-none" : "opacity-100 max-h-[10000px]"
-      )}>
+      {/* Reworked Theory & Complexity Docs - Full-width at the bottom */}
+      <div className="border-t border-slate-100 pt-8 mt-4">
         <TheoryView manifest={algoManifest} />
       </div>
 
-      {/* PARAMETERS CONFIGURATION MODAL */}
+      {/* Dynamic Input Editor modal overlay */}
       {showInput && (
         <InputEditor 
           inputs={algoManifest.inputs}
-          currentValues={currentInputs}
+          currentValues={currentInputs as Record<string, any>}
           onClose={() => setShowInput(false)}
           onRun={(newVals) => { 
-            setCurrentInputs(newVals); 
+            setCurrentInputs(newVals as Record<string, unknown>); 
             setShowInput(false); 
             if (engineRef.current) {
-              engineRef.current.load(algo, newVals);
+              engineRef.current.load(algo, newVals as Record<string, any>);
+              setCurrentStep(engineRef.current.currentStepIndex);
+              setTotalSteps(engineRef.current.totalSteps);
+              setEngineStatus(engineRef.current.status);
             }
           }}
         />
       )}
+
     </div>
   );
 };
