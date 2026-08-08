@@ -38,5 +38,8 @@
     "typescript-eslint": "^8.46.4",
     "vite": "^7.3.6",
     "rollup": "^4.62.4"
+  },
+  "overrides": {
+    "flatted": "^3.4.2"
   }
 }
