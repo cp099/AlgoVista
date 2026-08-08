@@ -42,10 +42,12 @@
   "overrides": {
     "flatted": "^3.4.2",
     "eslint": {
-      "brace-expansion": "^1.1.18"
+      "brace-expansion": "^1.1.18",
+      "minimatch": "^3.1.5"
     },
     "@typescript-eslint/typescript-estree": {
-      "brace-expansion": "^2.1.4"
+      "brace-expansion": "^2.1.4",
+      "minimatch": "^9.0.9"
     }
   }
 }
